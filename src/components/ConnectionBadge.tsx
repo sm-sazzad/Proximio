@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn, formatAgo } from "@/lib/utils";
 import { Wifi, WifiOff } from "lucide-react";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 
@@ -8,7 +8,7 @@ interface ConnectionBadgeProps {
 
 /**
  * Shows the device online/offline status with an icon, label,
- * and "updated Xs ago" text.
+ * and relative time indicator formatted with formatAgo.
  */
 export function ConnectionBadge({ className }: ConnectionBadgeProps) {
   const { online, secondsAgo } = useDeviceStatus();
@@ -34,10 +34,9 @@ export function ConnectionBadge({ className }: ConnectionBadgeProps) {
       </span>
       {secondsAgo !== null && (
         <span className="text-xs text-muted hidden sm:inline">
-          · {secondsAgo}s ago
+          · {formatAgo(secondsAgo)}
         </span>
       )}
     </div>
   );
 }
-

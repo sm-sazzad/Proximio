@@ -8,6 +8,7 @@ import { RadarGauge } from "@/components/RadarGauge";
 import { NumberTicker } from "@/components/NumberTicker";
 import { WifiSignal } from "@/components/WifiSignal";
 import { Skeleton } from "@/components/Skeleton";
+import { formatAgo } from "@/lib/utils";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -100,7 +101,7 @@ export default function DashboardPage() {
           <WifiOff className="h-5 w-5 shrink-0 text-warning" />
           <p>
             <strong>Device Offline:</strong> Showing last cached telemetry. Last ping received{" "}
-            {secondsAgo !== null ? `${secondsAgo}s ago` : "recently"}.
+            {secondsAgo !== null ? formatAgo(secondsAgo) : "recently"}.
           </p>
         </div>
       )}
@@ -135,7 +136,7 @@ export default function DashboardPage() {
             </div>
             {secondsAgo !== null && (
               <span className="text-[11px] font-mono text-muted">
-                updated {secondsAgo}s ago
+                updated {formatAgo(secondsAgo)}
               </span>
             )}
           </div>

@@ -67,3 +67,4 @@ export function WifiSignal({ rssi, className }: WifiSignalProps) {
     </div>
   );
 }
+

@@ -40,3 +40,4 @@ export function NumberTicker({
 
   return <span className={className}>{displayValue}</span>;
 }
+

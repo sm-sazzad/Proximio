@@ -21,7 +21,7 @@ interface BlipPosition {
 export function RadarGauge({ live, control, className = "" }: RadarGaugeProps) {
   const shouldReduceMotion = useReducedMotion();
 
-  // Radar geometry
+  // Radar geometry: center at (200, 200), radius R = 170
   const cx = 200;
   const cy = 200;
   const R = 170;
@@ -35,23 +35,27 @@ export function RadarGauge({ live, control, className = "" }: RadarGaugeProps) {
   const isOutOfRange = distance > maxScale;
   const isNoEcho = distance === -1;
 
-  // Compute blip position on central axis (forward-pointing 90° beam)
+  // Geometrically accurate radius: min 9px so it never overlaps the compact center hub (r=3.5)
   const currentRadius = isNoEcho
     ? 0
     : isOutOfRange
     ? R
-    : Math.max(10, (distance / maxScale) * R);
+    : Math.max(9, (distance / maxScale) * R);
 
   const currentX = cx;
   const currentY = cy - currentRadius;
 
-  // Trail of past positions (up to 3 previous positions)
+  // Trail of past positions (only updated when position meaningfully changes)
   const [trail, setTrail] = useState<BlipPosition[]>([]);
 
   useEffect(() => {
     if (distance > 0) {
       setTrail((prev) => {
-        const next = [
+        // Avoid duplicate/overlapping dots if distance hasn't changed by at least 3cm
+        if (prev.length > 0 && Math.abs(prev[0].distance - distance) < 3) {
+          return prev;
+        }
+        return [
           {
             x: currentX,
             y: currentY,
@@ -59,20 +63,19 @@ export function RadarGauge({ live, control, className = "" }: RadarGaugeProps) {
             status,
             timestamp: Date.now(),
           },
-          ...prev.slice(0, 2),
+          ...prev.slice(0, 1), // Keep at most 2 fading historical positions
         ];
-        return next;
       });
     }
   }, [distance, currentX, currentY, status]);
 
-  // Alert range calculations
+  // Alert range calculations in scale coordinates
   const minCm = control?.minCm ?? 10;
   const maxCm = control?.maxCm ?? 50;
   const alertRMin = Math.max(0, Math.min(R, (minCm / maxScale) * R));
   const alertRMax = Math.max(0, Math.min(R, (maxCm / maxScale) * R));
 
-  // Determine blip color based on state
+  // Determine blip color
   const blipColor =
     status === "alert"
       ? "#F43F5E"
@@ -90,26 +93,20 @@ export function RadarGauge({ live, control, className = "" }: RadarGaugeProps) {
         aria-label={`Radar showing ${distance === -1 ? "no echo" : distance + " cm"}`}
       >
         <defs>
-          {/* Clip to upper 180° semi-circle */}
+          {/* Exact semi-circle clip path for top 180° (y <= 200) */}
           <clipPath id="radar-clip">
-            <path d={`M ${cx - R - 2},${cy} A ${R + 2},${R + 2} 0 0,1 ${cx + R + 2},${cy} L ${cx + R + 2},${cy + 2} L ${cx - R - 2},${cy + 2} Z`} />
+            <path d={`M ${cx - R},${cy} A ${R},${R} 0 0,1 ${cx + R},${cy} Z`} />
           </clipPath>
 
-          {/* Sweeper beam gradient */}
-          <linearGradient id="sweep-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.35" />
-            <stop offset="70%" stopColor="#22D3EE" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="#22D3EE" stopOpacity="0" />
+          {/* Sweeper wedge gradient (fades to 0 at trailing edge) */}
+          <linearGradient id="sweep-wedge-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#22D3EE" stopOpacity="0" />
+            <stop offset="60%" stopColor="#22D3EE" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="#22D3EE" stopOpacity="0.28" />
           </linearGradient>
-
-          {/* Alert band glow filter */}
-          <filter id="alert-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
         </defs>
 
-        {/* Semi-circle background grid */}
+        {/* Semi-circle radar background plate */}
         <path
           d={`M ${cx - R},${cy} A ${R},${R} 0 0,1 ${cx + R},${cy} Z`}
           fill="#0D1424"
@@ -159,7 +156,6 @@ export function RadarGauge({ live, control, className = "" }: RadarGaugeProps) {
                 stroke="rgba(255,255,255,0.08)"
                 strokeWidth="1"
               />
-              {/* Distance label along the vertical spoke */}
               <text
                 x={cx + 4}
                 y={cy - r + 11}
@@ -174,25 +170,33 @@ export function RadarGauge({ live, control, className = "" }: RadarGaugeProps) {
           );
         })}
 
-        {/* Sweeping Radar Beam */}
+        {/* ── Sweeping Radar Beam (originating exactly at center cx=200, cy=200) ── */}
         <g clipPath="url(#radar-clip)">
-          <motion.g
-            animate={
-              shouldReduceMotion
-                ? { rotate: -45 }
-                : { rotate: [-180, 0] }
-            }
-            transition={{
-              repeat: Infinity,
-              duration: 4,
-              ease: "linear",
-            }}
-            style={{ transformOrigin: `${cx}px ${cy}px` }}
-          >
-            {/* Soft gradient sweep cone */}
+          <g transform={shouldReduceMotion ? `rotate(-90 ${cx} ${cy})` : undefined}>
+            {!shouldReduceMotion && (
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                from={`-180 ${cx} ${cy}`}
+                to={`0 ${cx} ${cy}`}
+                dur="4s"
+                repeatCount="indefinite"
+              />
+            )}
+            {/* Trailing wedge originating at center (200, 200), 25° wide */}
             <path
-              d={`M ${cx},${cy} L ${cx + R + 10},${cy} A ${R + 10},${R + 10} 0 0,0 ${cx + (R + 10) * Math.cos((25 * Math.PI) / 180)},${cy - (R + 10) * Math.sin((25 * Math.PI) / 180)} Z`}
-              fill="url(#sweep-gradient)"
+              d={`M ${cx},${cy} L 354.1,128.2 A ${R},${R} 0 0,1 ${cx + R},${cy} Z`}
+              fill="url(#sweep-wedge-gradient)"
+            />
+            {/* Soft beam glow */}
+            <line
+              x1={cx}
+              y1={cy}
+              x2={cx + R}
+              y2={cy}
+              stroke="#22D3EE"
+              strokeWidth="2.5"
+              strokeOpacity="0.25"
             />
             {/* Leading sweep line */}
             <line
@@ -202,67 +206,78 @@ export function RadarGauge({ live, control, className = "" }: RadarGaugeProps) {
               y2={cy}
               stroke="#22D3EE"
               strokeWidth="1.5"
-              strokeOpacity="0.85"
+              strokeOpacity="0.9"
             />
-          </motion.g>
+            {/* Outer tip locator dot */}
+            <circle cx={cx + R} cy={cy} r={1.5} fill="#22D3EE" opacity="0.9" />
+          </g>
         </g>
 
-        {/* Fading blip trail */}
+        {/* ── Fading Position Trail (filtered to never overlap main blip) ── */}
         {!isNoEcho &&
-          trail.map((pos, index) => {
-            const opacity = 0.35 / (index + 1);
-            return (
+          trail
+            .filter((pos) => Math.abs(pos.y - currentY) >= 8)
+            .map((pos, index) => (
               <circle
                 key={pos.timestamp}
                 cx={pos.x}
                 cy={pos.y}
-                r={4}
+                r={index === 0 ? 2 : 1.5}
                 fill={pos.status === "alert" ? "#F43F5E" : "#22D3EE"}
-                opacity={opacity}
+                opacity={index === 0 ? 0.35 : 0.15}
               />
-            );
-          })}
+            ))}
 
-        {/* Active Target Blip */}
+        {/* ── Active Target Blip (Single Clean Dot with Glow & Ping Ripple) ── */}
         {!isNoEcho && (
           <g>
-            {/* Outer halo during alert or normal */}
+            {/* Ping Ripple */}
             <motion.circle
               cx={currentX}
               cy={currentY}
-              r={status === "alert" ? 12 : 9}
-              fill={blipColor}
+              r={4}
+              stroke={blipColor}
+              strokeWidth={1}
+              fill="none"
               animate={{
-                scale: status === "alert" ? [1, 1.4, 1] : [1, 1.2, 1],
-                opacity: status === "alert" ? [0.6, 0.15, 0.6] : [0.35, 0.1, 0.35],
+                r: status === "alert" ? [4, 14] : [4, 11],
+                opacity: [0.75, 0],
               }}
               transition={{
                 repeat: Infinity,
-                duration: status === "alert" ? 0.9 : 1.8,
-                ease: "easeInOut",
+                duration: status === "alert" ? 0.9 : 1.6,
+                ease: "easeOut",
               }}
             />
 
-            {/* Core blip with spring transition */}
+            {/* Soft Ambient Glow Halo */}
+            <circle
+              cx={currentX}
+              cy={currentY}
+              r={7}
+              fill={blipColor}
+              opacity={status === "alert" ? 0.4 : 0.22}
+            />
+
+            {/* Single Clean Core Dot */}
             <motion.circle
               cx={currentX}
               cy={currentY}
-              r={5}
+              r={3.5}
               fill={blipColor}
               stroke="#FFFFFF"
-              strokeWidth="1.5"
+              strokeWidth={1.2}
               animate={{ cx: currentX, cy: currentY }}
-              transition={{ type: "spring", stiffness: 75, damping: 14 }}
-              filter="drop-shadow(0 0 6px currentColor)"
+              transition={{ type: "spring", stiffness: 85, damping: 15 }}
             />
           </g>
         )}
 
-        {/* Center Sonar Emitter */}
-        <circle cx={cx} cy={cy} r={6} fill="#121A2B" stroke="#22D3EE" strokeWidth="2" />
-        <circle cx={cx} cy={cy} r={2.5} fill="#22D3EE" />
+        {/* Compact Center Radar Emitter */}
+        <circle cx={cx} cy={cy} r={3.5} fill="#0A0F1C" stroke="#22D3EE" strokeWidth="1.5" />
+        <circle cx={cx} cy={cy} r={1.5} fill="#22D3EE" />
 
-        {/* Baseline ground plate */}
+        {/* Baseline Ground Plate */}
         <line
           x1={cx - R - 10}
           y1={cy}

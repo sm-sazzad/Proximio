@@ -7,6 +7,7 @@ import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { GlassCard } from "@/components/GlassCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { StatusPill } from "@/components/StatusPill";
+import { formatAgo } from "@/lib/utils";
 
 export default function DebugPage() {
   const live = useLive();
@@ -31,7 +32,7 @@ export default function DebugPage() {
         </span>
         {secondsAgo !== null && (
           <span className="text-muted text-sm ml-auto">
-            last ping {secondsAgo}s ago
+            last ping {formatAgo(secondsAgo)}
           </span>
         )}
       </GlassCard>
