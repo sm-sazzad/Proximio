@@ -13,10 +13,38 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Proximo",
-  description: "Real-time distance monitoring dashboard",
+  metadataBase: new URL("https://proximo.local"),
+  title: {
+    default: "Proximo — Real-Time IoT Distance Telemetry",
+    template: "%s · Proximo",
+  },
+  description:
+    "An ESP32 and ultrasonic sensor measure distance live. Real-time sweeping radar, live charts, kinematics speed analysis, and cloud remote control.",
+  keywords: [
+    "ESP32",
+    "Ultrasonic Sensor",
+    "HC-SR04",
+    "IoT",
+    "Distance Monitor",
+    "Telemetry",
+    "Firebase",
+    "Next.js",
+  ],
   icons: {
     icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
+  openGraph: {
+    title: "Proximo — Real-Time IoT Distance Telemetry",
+    description: "Proximity, in real time. Microcontroller telemetry, radar sweeps, and live controls.",
+    siteName: "Proximo",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Proximo — Real-Time IoT Distance Telemetry",
+    description: "Proximity, in real time. Microcontroller telemetry, radar sweeps, and live controls.",
   },
 };
 

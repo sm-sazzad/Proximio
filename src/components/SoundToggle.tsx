@@ -12,7 +12,8 @@ export function SoundToggle() {
       type="button"
       onClick={toggleSound}
       className={cn(
-        "relative flex items-center justify-center h-8 w-8 rounded-lg border text-xs font-mono transition-all",
+        "relative flex items-center justify-center h-9 w-9 rounded-lg border text-xs font-mono transition-all",
+        "before:absolute before:-inset-1 before:content-['']",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
         soundEnabled
           ? "border-accent/60 bg-accent/15 text-accent shadow-[0_0_12px_rgba(34,211,238,0.25)]"

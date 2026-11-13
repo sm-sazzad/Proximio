@@ -24,6 +24,7 @@ import {
   Sparkles,
   ArrowRight,
   Info,
+  AlertTriangle,
 } from "lucide-react";
 
 /** Quick selectable preset ranges */
@@ -94,6 +95,12 @@ export default function ControlPage() {
 
   const hasUnsavedChanges =
     draftMin !== control.minCm || draftMax !== control.maxCm;
+
+  // Check if remotely stored Firebase range violates firmware constraints (2 <= min < max <= 400)
+  const isStoredRangeInvalid =
+    control.minCm < 2 ||
+    control.maxCm > 400 ||
+    control.minCm >= control.maxCm;
 
   // Handle Range Slider changes (enforcing minCm >= 2, maxCm <= 400, max - min >= 2)
   const handleSliderChange = ([newMin, newMax]: [number, number]) => {
@@ -236,6 +243,24 @@ export default function ControlPage() {
             <strong>Device is offline.</strong> Changes are saved in the cloud
             and will automatically apply when the device reconnects.
           </p>
+        </div>
+      )}
+
+      {/* ── Stored Invalid Range Warning Banner (Out of Bounds) ────── */}
+      {isStoredRangeInvalid && (
+        <div
+          className="rounded-xl border border-warning/50 bg-warning/15 p-4 text-warning flex items-start gap-3 text-xs sm:text-sm"
+          role="alert"
+        >
+          <AlertTriangle className="h-5 w-5 shrink-0 text-warning mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-bold">
+              Stored Alert Range Out of Bounds
+            </p>
+            <p className="text-warning/90">
+              Current stored values in Firebase are <strong>min: {control.minCm} cm</strong> and <strong>max: {control.maxCm} cm</strong>, which violate the device operational constraints (2 to 400 cm, with min &lt; max). The ESP32 firmware ignores invalid settings. Adjust below to valid thresholds and click Apply.
+            </p>
+          </div>
         </div>
       )}
 
