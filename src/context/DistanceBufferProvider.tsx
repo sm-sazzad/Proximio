@@ -78,3 +78,4 @@ export function DistanceBufferProvider({ children }: { children: ReactNode }) {
 export function useDistanceBuffer(): DistanceSample[] {
   return useContext(DistanceBufferContext);
 }
+

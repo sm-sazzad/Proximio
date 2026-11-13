@@ -5,6 +5,7 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -23,6 +24,13 @@ const WINDOW_OPTIONS = [
   { label: "1 min", value: 60 * 1000 },
   { label: "5 min", value: 5 * 60 * 1000 },
 ] as const;
+
+interface ChartDataPoint extends DistanceSample {
+  /** Distance only for connected runs of 2+ samples (for area fill + line) */
+  areaDistance: number | null;
+  /** Distance only for isolated samples with null before & after (for dot-only rendering) */
+  isolatedDistance: number | null;
+}
 
 export function LiveChart() {
   const samples = useDistanceBuffer();
@@ -76,10 +84,33 @@ export function LiveChart() {
   const minCm = control?.minCm ?? 10;
   const maxCm = control?.maxCm ?? 50;
 
-  // Y-axis max scale (at least 100cm, step of 50cm, never above 400cm)
+  // Separate connected runs (for area fill) from isolated single samples (dot only)
+  const chartData: ChartDataPoint[] = useMemo(() => {
+    return visibleSamples.map((sample, idx, arr) => {
+      if (sample.distance === null) {
+        return {
+          ...sample,
+          areaDistance: null,
+          isolatedDistance: null,
+        };
+      }
+
+      const hasPrev = idx > 0 && arr[idx - 1].distance !== null;
+      const hasNext = idx < arr.length - 1 && arr[idx + 1].distance !== null;
+      const isConnected = hasPrev || hasNext;
+
+      return {
+        ...sample,
+        areaDistance: isConnected ? sample.distance : null,
+        isolatedDistance: !isConnected ? sample.distance : null,
+      };
+    });
+  }, [visibleSamples]);
+
+  // Y-axis max scale: clamp(roundUp(control.maxCm * 1.5, step 10), 60, 400)
   const yMax = useMemo(() => {
-    const target = Math.max(maxCm * 1.25, 100);
-    return Math.min(400, Math.ceil(target / 50) * 50);
+    const rounded = Math.ceil((maxCm * 1.5) / 10) * 10;
+    return Math.min(400, Math.max(60, rounded));
   }, [maxCm]);
 
   // Calculate statistics for the visible window
@@ -100,15 +131,43 @@ export function LiveChart() {
     return { min, max, avg, count: valid.length };
   }, [visibleSamples]);
 
-  // Format tick times: mm:ss
-  const formatTimeTick = (ms: number) => {
-    const d = new Date(ms);
-    const m = String(d.getMinutes()).padStart(2, "0");
-    const s = String(d.getSeconds()).padStart(2, "0");
-    return `${m}:${s}`;
+  // Explicit relative X ticks:
+  // 1 min: -60s, -40s, -20s, now
+  // 5 min: -5m, -4m, -3m, -2m, -1m, now
+  const xTicks = useMemo(() => {
+    if (windowMs <= 60 * 1000) {
+      return [
+        effectiveNow - 60 * 1000,
+        effectiveNow - 40 * 1000,
+        effectiveNow - 20 * 1000,
+        effectiveNow,
+      ];
+    } else {
+      return [
+        effectiveNow - 5 * 60 * 1000,
+        effectiveNow - 4 * 60 * 1000,
+        effectiveNow - 3 * 60 * 1000,
+        effectiveNow - 2 * 60 * 1000,
+        effectiveNow - 1 * 60 * 1000,
+        effectiveNow,
+      ];
+    }
+  }, [effectiveNow, windowMs]);
+
+  // Relative X tick formatter
+  const formatRelativeTick = (ms: number) => {
+    const diffSec = Math.round((ms - effectiveNow) / 1000);
+    if (diffSec >= -2) {
+      return "now";
+    }
+    if (windowMs <= 60 * 1000) {
+      return `${diffSec}s`;
+    }
+    const diffMin = Math.round(diffSec / 60);
+    return diffMin === 0 ? "now" : `${diffMin}m`;
   };
 
-  // Format tooltip times: HH:mm:ss
+  // Full tooltip time formatter: HH:mm:ss
   const formatTooltipTime = (ms: number) => {
     const d = new Date(ms);
     const h = String(d.getHours()).padStart(2, "0");
@@ -217,7 +276,7 @@ export function LiveChart() {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={visibleSamples}
+              data={chartData}
               margin={{ top: 10, right: 10, left: -18, bottom: 0 }}
             >
               <defs>
@@ -234,20 +293,21 @@ export function LiveChart() {
                 vertical={false}
               />
 
-              {/* Dynamic Scrolling Time Axis */}
+              {/* Relative Scrolling Time Axis */}
               <XAxis
                 dataKey="timestamp"
                 type="number"
                 domain={[windowStart, effectiveNow]}
-                tickFormatter={formatTimeTick}
+                ticks={xTicks}
+                tickFormatter={formatRelativeTick}
+                interval={0}
                 stroke="#8A97AD"
                 tick={{ fill: "#8A97AD", fontSize: 10 }}
                 tickLine={false}
                 axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
-                minTickGap={45}
               />
 
-              {/* Distance Axis */}
+              {/* Compact Dynamic Y-Axis Scale */}
               <YAxis
                 domain={[0, yMax]}
                 stroke="#8A97AD"
@@ -257,11 +317,11 @@ export function LiveChart() {
                 tickFormatter={(v: number) => `${v}cm`}
               />
 
-              {/* Dark Glass Tooltip */}
+              {/* Dark Glass Tooltip with Full HH:mm:ss */}
               <Tooltip
                 content={({ active, payload }) => {
                   if (!active || !payload || !payload.length) return null;
-                  const data = payload[0].payload as DistanceSample;
+                  const data = payload[0].payload as ChartDataPoint;
                   const isSampleAlert =
                     data.distance !== null &&
                     data.distance >= minCm &&
@@ -337,10 +397,10 @@ export function LiveChart() {
                 }}
               />
 
-              {/* Cyan Distance Stream Area */}
+              {/* Cyan Distance Stream Area (Runs of 2+ connected samples) */}
               <Area
                 type="monotone"
-                dataKey="distance"
+                dataKey="areaDistance"
                 stroke="#22D3EE"
                 strokeWidth={1.8}
                 fill="url(#distance-chart-gradient)"
@@ -350,27 +410,72 @@ export function LiveChart() {
                   const { cx, cy, payload } = (props ?? {}) as {
                     cx?: number;
                     cy?: number;
-                    payload?: DistanceSample;
+                    payload?: ChartDataPoint;
                   };
                   if (
                     cx === undefined ||
                     cy === undefined ||
                     !payload ||
-                    payload.distance === null ||
-                    payload.distance < minCm ||
-                    payload.distance > maxCm
+                    payload.areaDistance === null ||
+                    payload.areaDistance < minCm ||
+                    payload.areaDistance > maxCm
                   ) {
-                    return <g key={`${cx}-${cy}`} />;
+                    return <g key={`area-dot-${cx}-${cy}`} />;
                   }
                   return (
                     <circle
-                      key={`${cx}-${cy}`}
+                      key={`area-dot-${cx}-${cy}`}
                       cx={cx}
                       cy={cy}
                       r={2.5}
                       fill="#F43F5E"
                       stroke="#FFFFFF"
                       strokeWidth={0.8}
+                    />
+                  );
+                }}
+                activeDot={{
+                  r: 4.5,
+                  fill: "#22D3EE",
+                  stroke: "#FFFFFF",
+                  strokeWidth: 1.5,
+                }}
+              />
+
+              {/* Isolated Samples (Dot only, no vertical area rectangle) */}
+              <Line
+                type="monotone"
+                dataKey="isolatedDistance"
+                stroke="none"
+                fill="none"
+                connectNulls={false}
+                isAnimationActive={false}
+                dot={(props: unknown) => {
+                  const { cx, cy, payload } = (props ?? {}) as {
+                    cx?: number;
+                    cy?: number;
+                    payload?: ChartDataPoint;
+                  };
+                  if (
+                    cx === undefined ||
+                    cy === undefined ||
+                    !payload ||
+                    payload.isolatedDistance === null
+                  ) {
+                    return <g key={`iso-dot-${cx}-${cy}`} />;
+                  }
+                  const isAlert =
+                    payload.isolatedDistance >= minCm &&
+                    payload.isolatedDistance <= maxCm;
+                  return (
+                    <circle
+                      key={`iso-dot-${cx}-${cy}`}
+                      cx={cx}
+                      cy={cy}
+                      r={3}
+                      fill={isAlert ? "#F43F5E" : "#22D3EE"}
+                      stroke="#FFFFFF"
+                      strokeWidth={1}
                     />
                   );
                 }}
