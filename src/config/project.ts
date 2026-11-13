@@ -50,6 +50,7 @@ export interface ProjectConfig {
   semester?: string;
   year?: string;
   repositoryUrl?: string;
+  liveSiteUrl?: string;
   team: TeamMember[];
   developer: DeveloperProfile;
 }
@@ -64,6 +65,7 @@ export const projectConfig: ProjectConfig = {
   semester: "Diploma in Engineering (CST)",
   year: "2026",
   repositoryUrl: "https://github.com/sm-sazzad",
+  liveSiteUrl: "https://proximo-zeta.vercel.app/",
   team: [
     {
       name: "Sheikh Md Sazzad Hossain",
@@ -87,7 +89,7 @@ export const projectConfig: ProjectConfig = {
       role: "Hardware Prototyping & Power Testing",
     },
     {
-      name: "Rï Æd",
+      name: "Riad",
       role: "Component Integration & Quality Check",
     },
     {

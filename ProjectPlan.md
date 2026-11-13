@@ -130,7 +130,7 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 - [x] Step 7 — Smart insights
 - [x] Step 8 — About page and polish
 - [x] Step 8b — Developer page
-- [ ] Step 9 — Deploy to Vercel
+- [x] Step 9 — Deploy to Vercel (Live at https://proximo-zeta.vercel.app/)
 
 ### Step 1 — Foundation
 

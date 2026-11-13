@@ -476,9 +476,9 @@ export default function ControlPage() {
         </GlassCard>
 
         {/* 2) Immediate Switches Column (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col gap-5 justify-between">
+        <div className="lg:col-span-5 flex flex-col gap-4">
           {/* Master Arm Switch */}
-          <GlassCard hover className="p-6 flex flex-col justify-between">
+          <GlassCard hover className="flex-1 p-5 sm:p-6 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <div
@@ -544,7 +544,7 @@ export default function ControlPage() {
           </GlassCard>
 
           {/* Buzzer Sounder Switch */}
-          <GlassCard hover className="p-6 flex flex-col justify-between">
+          <GlassCard hover className="flex-1 p-5 sm:p-6 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <div

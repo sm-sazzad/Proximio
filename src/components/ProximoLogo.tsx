@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface ProximoLogoProps {
@@ -6,47 +7,27 @@ interface ProximoLogoProps {
 }
 
 /**
- * Proximo radar/sonar wave logo.
- * Three concentric arcs radiating from a center dot — a sonar pulse feel.
+ * Proximo brand mark.
+ * Stylized glowing cyan 'P' monogram with radiating ultrasonic proximity waves.
  */
 export function ProximoLogo({ className, size = 28 }: ProximoLogoProps) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={cn("shrink-0", className)}
-      aria-hidden="true"
+    <div
+      style={{ width: size, height: size }}
+      className={cn(
+        "relative rounded-lg overflow-hidden shrink-0 shadow-[0_0_14px_rgba(34,211,238,0.35)] ring-1 ring-accent/30 bg-[#060B16]",
+        className,
+      )}
     >
-      {/* Center dot */}
-      <circle cx="8" cy="24" r="2.5" fill="#22D3EE" />
-      {/* Inner arc */}
-      <path
-        d="M12 20a6.5 6.5 0 0 0-6.5-6.5"
-        stroke="#22D3EE"
-        strokeWidth="2"
-        strokeLinecap="round"
-        opacity="0.9"
+      <Image
+        src="/logo.png"
+        alt="Proximo Logo"
+        width={Math.max(64, size * 2)}
+        height={Math.max(64, size * 2)}
+        className="w-full h-full object-cover"
+        priority
       />
-      {/* Middle arc */}
-      <path
-        d="M18 14a13 13 0 0 0-13-13"
-        stroke="#22D3EE"
-        strokeWidth="2"
-        strokeLinecap="round"
-        opacity="0.6"
-      />
-      {/* Outer arc */}
-      <path
-        d="M24 8A19.5 19.5 0 0 0 4.5 1"
-        stroke="#22D3EE"
-        strokeWidth="2"
-        strokeLinecap="round"
-        opacity="0.35"
-      />
-    </svg>
+    </div>
   );
 }
 
