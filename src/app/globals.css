@@ -1,26 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0A0F1C;
+  --card: #121A2B;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #E6EDF7;
+  --muted: #8A97AD;
+  --accent: #22D3EE;
+  --success: #34D399;
+  --warning: #F59E0B;
+  --danger: #F43F5E;
+
+  /* shadcn UI compatibility tokens */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card-foreground: var(--text);
+  --popover: var(--card);
+  --popover-foreground: var(--text);
+  --primary: var(--accent);
+  --primary-foreground: #0A0F1C;
+  --secondary: #1E293B;
+  --secondary-foreground: var(--text);
+  --muted-foreground: var(--muted);
+  --destructive: var(--danger);
+  --destructive-foreground: #FFFFFF;
+  --input: var(--border);
+  --ring: var(--accent);
 }
 
 @theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --font-sans: var(--font-inter);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), system-ui, sans-serif;
 }
