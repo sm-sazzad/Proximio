@@ -41,3 +41,4 @@ export function SoundToggle() {
     </button>
   );
 }
+

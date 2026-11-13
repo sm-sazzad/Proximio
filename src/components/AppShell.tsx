@@ -66,7 +66,7 @@ export function AppShell({ children }: AppShellProps) {
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
                       isActive
                         ? "bg-accent/10 text-accent font-semibold"
-                        : "text-muted hover:text-text hover:bg-white/[0.04]"
+                        : "text-muted hover:text-text hover:bg-white/[0.04]",
                     )}
                     aria-current={isActive ? "page" : undefined}
                   >
@@ -99,14 +99,14 @@ export function AppShell({ children }: AppShellProps) {
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset",
-                isActive ? "text-accent font-semibold" : "text-muted"
+                isActive ? "text-accent font-semibold" : "text-muted",
               )}
               aria-current={isActive ? "page" : undefined}
             >
               <Icon
                 className={cn(
                   "h-5 w-5",
-                  isActive && "drop-shadow-[0_0_6px_rgba(34,211,238,0.5)]"
+                  isActive && "drop-shadow-[0_0_6px_rgba(34,211,238,0.5)]",
                 )}
               />
               {label}

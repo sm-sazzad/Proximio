@@ -98,6 +98,9 @@ export function SmartInsights() {
   } else if (isNoEcho) {
     predictionHero = "Waiting for echo";
     predictionSub = "Valid reflection needed for prediction";
+  } else if (direction === "Unknown") {
+    predictionHero = "Waiting for data...";
+    predictionSub = "Accumulating movement samples";
   } else if (isApproaching) {
     if (distance <= maxCm && distance >= minCm) {
       predictionHero = "Inside the alert zone";
@@ -125,6 +128,13 @@ export function SmartInsights() {
       predictionTone = "danger";
       predictionSub = `Sensor deadzone threshold (< ${minCm} cm)`;
     }
+  } else if (direction === "Moving away") {
+    predictionHero = "Moving away";
+    predictionSub = "Target is receding from sensor";
+  } else {
+    // Steady
+    predictionHero = "Target is steady";
+    predictionSub = "Distance is remaining constant";
   }
 
   // Zone track visual metrics
@@ -250,7 +260,7 @@ export function SmartInsights() {
 
           <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted font-mono">
             <span>Linear regression</span>
-            <span>{sampleCount} samples (~6s)</span>
+            <span>{sampleCount} {sampleCount === 1 ? "sample" : "samples"} (rolling)</span>
           </div>
         </GlassCard>
 
@@ -385,3 +395,4 @@ export function SmartInsights() {
     </div>
   );
 }
+

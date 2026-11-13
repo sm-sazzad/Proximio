@@ -4,6 +4,7 @@ import { useMemo, useRef } from "react";
 import { useDistanceBuffer } from "@/context/DistanceBufferProvider";
 import { useLive } from "@/hooks/useLive";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
+import { useServerTimeOffset } from "@/hooks/useServerTimeOffset";
 
 export type MotionDirection = "Approaching" | "Moving away" | "Steady" | "Unknown";
 export type MotionConfidence = "high" | "medium" | "low";
@@ -11,7 +12,7 @@ export type MotionConfidence = "high" | "medium" | "low";
 export interface MotionInsights {
   /** Direction of movement relative to the sensor */
   direction: MotionDirection;
-  /** Speed in cm/s (absolute value, rounded to 1 decimal) */
+  /** Speed in cm/s (smoothed absolute value, rounded to 1 decimal) */
   speedCmS: number;
   /** Confidence in the regression fit and sample density */
   confidence: MotionConfidence;
@@ -23,28 +24,30 @@ export interface MotionInsights {
 
 /**
  * Computes speed and direction of an object relative to the ultrasonic sensor.
- * Uses a linear regression slope over the last ~6 seconds of buffer samples
- * so that single noisy readings cannot flip the result.
- * Includes hysteresis to prevent flickering between states.
+ * Uses a linear regression slope over the last ~8 seconds of buffer samples
+ * so that single noisy readings or transient network lags cannot flip the result.
+ * Includes hysteresis and state smoothing to prevent flickering between states.
  */
 export function useMotionInsights(): MotionInsights {
   const samples = useDistanceBuffer();
   const live = useLive();
-  const { online } = useDeviceStatus();
+  const { online, secondsAgo } = useDeviceStatus();
+  const offset = useServerTimeOffset();
 
-  // Persistent direction ref for hysteresis
+  // Persistent refs for hysteresis, smoothing, and transient hold
   const prevDirectionRef = useRef<MotionDirection>("Unknown");
+  const prevSpeedRef = useRef<number>(0);
+  const lastValidCalcRef = useRef<{
+    time: number;
+    insights: MotionInsights;
+  } | null>(null);
 
   return useMemo(() => {
-    // 1. Check basic validity constraints
-    if (
-      !online ||
-      !live ||
-      live.status === "disarmed" ||
-      live.distance === -1 ||
-      samples.length < 3
-    ) {
+    // 1. Hard validity constraints: offline or disarmed
+    if (!online || !live || live.status === "disarmed") {
       prevDirectionRef.current = "Unknown";
+      prevSpeedRef.current = 0;
+      lastValidCalcRef.current = null;
       return {
         direction: "Unknown",
         speedCmS: 0,
@@ -54,12 +57,14 @@ export function useMotionInsights(): MotionInsights {
       };
     }
 
-    // 2. Select valid samples from the last ~6.5 seconds
-    const latestSampleTs = samples[samples.length - 1].timestamp;
+    // 2. Determine reference timestamp using server offset
+    const serverNow = Date.now() + offset;
 
-    // If latest sample is older than 4.5s, data is stale
-    if (Date.now() - latestSampleTs > 4500) {
+    // If device hasn't sent data for > 8s, mark as stale
+    if (secondsAgo !== null && secondsAgo > 8) {
       prevDirectionRef.current = "Unknown";
+      prevSpeedRef.current = 0;
+      lastValidCalcRef.current = null;
       return {
         direction: "Unknown",
         speedCmS: 0,
@@ -69,13 +74,32 @@ export function useMotionInsights(): MotionInsights {
       };
     }
 
-    const windowCutoff = latestSampleTs - 6500;
+    // 3. Select valid (non-null, non-negative) samples from a robust ~8.5s rolling window
+    // This accommodates network latency and variable ESP32 loop times (1.0s–1.5s)
+    const latestSampleTs =
+      samples.length > 0 ? samples[samples.length - 1].timestamp : live.ts;
+
+    const windowCutoff = latestSampleTs - 8500;
     const validSamples = samples.filter(
       (s) => s.timestamp >= windowCutoff && s.distance !== null && s.distance >= 0
     );
 
+    // If buffer currently has fewer than 3 valid samples:
     if (validSamples.length < 3) {
+      // If we had a recent valid calculation within the last 2.5s, hold it smoothly
+      if (
+        lastValidCalcRef.current &&
+        serverNow - lastValidCalcRef.current.time < 2500
+      ) {
+        return {
+          ...lastValidCalcRef.current.insights,
+          sampleCount: validSamples.length,
+        };
+      }
+
+      // Otherwise, genuinely waiting for data accumulation
       prevDirectionRef.current = "Unknown";
+      prevSpeedRef.current = 0;
       return {
         direction: "Unknown",
         speedCmS: 0,
@@ -85,7 +109,7 @@ export function useMotionInsights(): MotionInsights {
       };
     }
 
-    // 3. Simple Linear Regression: distance = slope * time + intercept
+    // 4. Simple Linear Regression: distance = slope * time + intercept
     const n = validSamples.length;
     const t0 = validSamples[0].timestamp;
 
@@ -119,41 +143,48 @@ export function useMotionInsights(): MotionInsights {
 
     const slope = sumTT > 0.001 ? sumTD / sumTT : 0;
     const rawSpeed = Math.abs(slope);
-    const speedCmS = Math.round(rawSpeed * 10) / 10;
 
-    // 4. Direction determination with Hysteresis
+    // Smooth speed with exponential moving average to prevent display jitter
+    const prevSpeed = prevSpeedRef.current;
+    const smoothedSpeed =
+      prevSpeed > 0
+        ? Math.round((prevSpeed * 0.35 + rawSpeed * 0.65) * 10) / 10
+        : Math.round(rawSpeed * 10) / 10;
+    prevSpeedRef.current = smoothedSpeed;
+
+    // 5. Direction determination with Hysteresis
     // - Steady threshold is around 2.0 cm/s
-    // - Transition from Steady requires > 2.4 cm/s
-    // - Return to Steady requires < 1.6 cm/s
+    // - Transition from Steady requires > 2.2 cm/s
+    // - Return to Steady requires < 1.7 cm/s
     const prev = prevDirectionRef.current;
     let newDirection: MotionDirection = "Steady";
 
     if (prev === "Steady") {
-      if (slope < -2.4) {
+      if (slope < -2.2) {
         newDirection = "Approaching";
-      } else if (slope > 2.4) {
+      } else if (slope > 2.2) {
         newDirection = "Moving away";
       } else {
         newDirection = "Steady";
       }
     } else if (prev === "Approaching") {
-      if (slope > -1.6 && slope < 2.2) {
+      if (slope > -1.7 && slope < 2.0) {
         newDirection = "Steady";
-      } else if (slope >= 2.2) {
+      } else if (slope >= 2.0) {
         newDirection = "Moving away";
       } else {
         newDirection = "Approaching";
       }
     } else if (prev === "Moving away") {
-      if (slope < 1.6 && slope > -2.2) {
+      if (slope < 1.7 && slope > -2.0) {
         newDirection = "Steady";
-      } else if (slope <= -2.2) {
+      } else if (slope <= -2.0) {
         newDirection = "Approaching";
       } else {
         newDirection = "Moving away";
       }
     } else {
-      // From Unknown
+      // From Unknown / Initializing
       if (rawSpeed < 2.0) {
         newDirection = "Steady";
       } else if (slope <= -2.0) {
@@ -165,7 +196,7 @@ export function useMotionInsights(): MotionInsights {
 
     prevDirectionRef.current = newDirection;
 
-    // 5. Confidence scoring
+    // 6. Confidence scoring
     // Residual sum of squares: SS_res = sum((d_i - pred_i)^2)
     let ssRes = 0;
     for (let i = 0; i < n; i++) {
@@ -179,26 +210,34 @@ export function useMotionInsights(): MotionInsights {
 
     if (newDirection === "Steady") {
       const variance = sumDD / n;
-      if (variance < 2.0) confidence = "high";
+      if (variance < 2.5) confidence = "high";
       else if (variance < 6.0) confidence = "medium";
       else confidence = "low";
     } else {
       const r2 = sumDD > 0.001 ? 1 - ssRes / sumDD : 0;
-      if (r2 >= 0.85 && n >= 4) {
+      if (r2 >= 0.8 && n >= 4) {
         confidence = "high";
-      } else if (r2 >= 0.6 || n >= 3) {
+      } else if (r2 >= 0.55 || n >= 3) {
         confidence = "medium";
       } else {
         confidence = "low";
       }
     }
 
-    return {
+    const result: MotionInsights = {
       direction: newDirection,
-      speedCmS,
+      speedCmS: newDirection === "Steady" ? 0 : smoothedSpeed,
       confidence,
       slope,
       sampleCount: n,
     };
-  }, [samples, live, online]);
+
+    // Cache this calculation for transient hold
+    lastValidCalcRef.current = {
+      time: serverNow,
+      insights: result,
+    };
+
+    return result;
+  }, [samples, live, online, secondsAgo, offset]);
 }
