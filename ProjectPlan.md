@@ -125,7 +125,7 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 - [x] Step 2 — App shell and design system
 - [x] Step 3 — Live dashboard
 - [x] Step 4 — Live chart
-- [ ] Step 5 — Control panel
+- [x] Step 5 — Control panel
 - [ ] Step 6 — History and analytics
 - [ ] Step 7 — Smart insights
 - [ ] Step 8 — About page and polish

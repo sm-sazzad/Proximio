@@ -5,6 +5,7 @@ import { FirebaseProviders } from "@/context/FirebaseProviders";
 import { AmbientBackground } from "@/components/AmbientBackground";
 import { AppShell } from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,6 +33,7 @@ export default function RootLayout({
           <AppShell>
             <PageTransition>{children}</PageTransition>
           </AppShell>
+          <Toaster theme="dark" position="bottom-right" richColors />
         </FirebaseProviders>
       </body>
     </html>
