@@ -137,7 +137,9 @@ export default function ControlPage() {
 
     // Strict validation rule: 0 <= minCm < maxCm <= 400 with integer numbers
     const validMin = Math.round(Math.max(2, Math.min(draftMin, 398)));
-    const validMax = Math.round(Math.min(400, Math.max(draftMax, validMin + 2)));
+    const validMax = Math.round(
+      Math.min(400, Math.max(draftMax, validMin + 2)),
+    );
 
     setIsSaving(true);
     try {
@@ -208,8 +210,12 @@ export default function ControlPage() {
       {/* ── Page Header ─────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text">Device Control</h1>
-          <p className="text-sm text-muted">Configure distance thresholds and alarm sounders</p>
+          <h1 className="text-2xl font-bold tracking-tight text-text">
+            Device Control
+          </h1>
+          <p className="text-sm text-muted">
+            Configure distance thresholds and alarm sounders
+          </p>
         </div>
 
         {/* Sync Latency Notice */}
@@ -227,7 +233,8 @@ export default function ControlPage() {
         >
           <WifiOff className="h-5 w-5 shrink-0 text-warning" />
           <p>
-            <strong>Device is offline.</strong> Changes are saved in the cloud and will automatically apply when the device reconnects.
+            <strong>Device is offline.</strong> Changes are saved in the cloud
+            and will automatically apply when the device reconnects.
           </p>
         </div>
       )}
@@ -235,7 +242,10 @@ export default function ControlPage() {
       {/* ── Top Bento Grid: Alert Range & Immediate Switches ─────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* 1) Alert Range Card (Large Bento 7 cols) */}
-        <GlassCard hover className="lg:col-span-7 p-6 space-y-6 flex flex-col justify-between">
+        <GlassCard
+          hover
+          className="lg:col-span-7 p-6 space-y-6 flex flex-col justify-between"
+        >
           <div>
             <div className="flex items-center justify-between mb-2">
               <SectionHeader
@@ -254,7 +264,8 @@ export default function ControlPage() {
               )}
             </div>
             <p className="text-xs text-muted">
-              Objects detected between {draftMin} cm and {draftMax} cm will trigger an intrusion alarm.
+              Objects detected between {draftMin} cm and {draftMax} cm will
+              trigger an intrusion alarm.
             </p>
           </div>
 
@@ -276,7 +287,7 @@ export default function ControlPage() {
                       "min-h-[44px] px-4 py-2 rounded-lg text-xs font-semibold transition-all border",
                       isSelected
                         ? "bg-accent/15 text-accent border-accent/40 shadow-[0_0_12px_rgba(34,211,238,0.2)]"
-                        : "bg-white/[0.03] text-muted border-border hover:text-text hover:bg-white/[0.06]"
+                        : "bg-white/[0.03] text-muted border-border hover:text-text hover:bg-white/[0.06]",
                     )}
                   >
                     {preset.name} ({preset.min}–{preset.max} cm)
@@ -314,7 +325,7 @@ export default function ControlPage() {
                           "absolute -top-6 rounded px-1 py-0.5 text-[9px] font-mono font-bold whitespace-nowrap shadow-md border",
                           isLiveInDraftRange
                             ? "bg-danger/25 border-danger/80 text-danger"
-                            : "bg-card border-accent/80 text-accent"
+                            : "bg-card border-accent/80 text-accent",
                         )}
                       >
                         Live: {live.distance}cm
@@ -322,7 +333,7 @@ export default function ControlPage() {
                       <div
                         className={cn(
                           "h-4 w-1.5 rounded-full border border-bg shadow",
-                          isLiveInDraftRange ? "bg-danger" : "bg-accent"
+                          isLiveInDraftRange ? "bg-danger" : "bg-accent",
                         )}
                       />
                     </div>
@@ -355,7 +366,10 @@ export default function ControlPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <label htmlFor="min-input" className="text-xs text-muted font-medium">
+                  <label
+                    htmlFor="min-input"
+                    className="text-xs text-muted font-medium"
+                  >
                     Min:
                   </label>
                   <input
@@ -374,7 +388,10 @@ export default function ControlPage() {
                 <ArrowRight className="h-3.5 w-3.5 text-muted hidden sm:inline" />
 
                 <div className="flex items-center gap-2">
-                  <label htmlFor="max-input" className="text-xs text-muted font-medium">
+                  <label
+                    htmlFor="max-input"
+                    className="text-xs text-muted font-medium"
+                  >
                     Max:
                   </label>
                   <input
@@ -413,7 +430,7 @@ export default function ControlPage() {
                     "min-h-[44px] px-5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-lg",
                     hasUnsavedChanges
                       ? "bg-accent text-bg hover:bg-accent/90 shadow-[0_0_20px_rgba(34,211,238,0.3)] active:scale-95"
-                      : "bg-white/10 text-muted cursor-not-allowed opacity-60"
+                      : "bg-white/10 text-muted cursor-not-allowed opacity-60",
                   )}
                 >
                   {isSaving ? (
@@ -444,7 +461,7 @@ export default function ControlPage() {
                     "h-9 w-9 rounded-xl flex items-center justify-center transition-colors",
                     optimisticArmed
                       ? "bg-success/15 text-success shadow-[0_0_15px_rgba(52,211,153,0.3)]"
-                      : "bg-white/5 text-muted"
+                      : "bg-white/5 text-muted",
                   )}
                 >
                   {optimisticArmed ? (
@@ -454,12 +471,18 @@ export default function ControlPage() {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-text">System Monitoring</h3>
+                  <h3 className="text-sm font-semibold text-text">
+                    System Monitoring
+                  </h3>
                   <p className="text-xs text-muted">
                     {optimisticArmed ? (
-                      <span className="text-success font-semibold">Armed & Active</span>
+                      <span className="text-success font-semibold">
+                        Armed & Active
+                      </span>
                     ) : (
-                      <span className="text-muted font-semibold">Standby (Disarmed)</span>
+                      <span className="text-muted font-semibold">
+                        Standby (Disarmed)
+                      </span>
                     )}
                   </p>
                 </div>
@@ -472,14 +495,16 @@ export default function ControlPage() {
                   onCheckedChange={handleArmedToggle}
                   className={cn(
                     "peer inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success",
-                    optimisticArmed ? "bg-success" : "bg-white/15"
+                    optimisticArmed ? "bg-success" : "bg-white/15",
                   )}
                   aria-label="Toggle system arming status"
                 >
                   <SwitchPrimitive.Thumb
                     className={cn(
                       "pointer-events-none block h-5 w-5 rounded-full bg-text shadow-lg ring-0 transition-transform",
-                      optimisticArmed ? "translate-x-5 bg-bg" : "translate-x-0 bg-muted"
+                      optimisticArmed
+                        ? "translate-x-5 bg-bg"
+                        : "translate-x-0 bg-muted",
                     )}
                   />
                 </SwitchPrimitive.Root>
@@ -502,7 +527,7 @@ export default function ControlPage() {
                     "h-9 w-9 rounded-xl flex items-center justify-center transition-colors",
                     optimisticBuzzer
                       ? "bg-accent/15 text-accent shadow-[0_0_15px_rgba(34,211,238,0.3)]"
-                      : "bg-white/5 text-muted"
+                      : "bg-white/5 text-muted",
                   )}
                 >
                   {optimisticBuzzer ? (
@@ -512,12 +537,18 @@ export default function ControlPage() {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-text">Hardware Buzzer</h3>
+                  <h3 className="text-sm font-semibold text-text">
+                    Hardware Buzzer
+                  </h3>
                   <p className="text-xs text-muted">
                     {optimisticBuzzer ? (
-                      <span className="text-accent font-semibold">Buzzer Sounder On</span>
+                      <span className="text-accent font-semibold">
+                        Buzzer Sounder On
+                      </span>
                     ) : (
-                      <span className="text-muted font-semibold">Sounder Muted</span>
+                      <span className="text-muted font-semibold">
+                        Sounder Muted
+                      </span>
                     )}
                   </p>
                 </div>
@@ -530,14 +561,16 @@ export default function ControlPage() {
                   onCheckedChange={handleBuzzerToggle}
                   className={cn(
                     "peer inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-                    optimisticBuzzer ? "bg-accent" : "bg-white/15"
+                    optimisticBuzzer ? "bg-accent" : "bg-white/15",
                   )}
                   aria-label="Toggle hardware buzzer sounder"
                 >
                   <SwitchPrimitive.Thumb
                     className={cn(
                       "pointer-events-none block h-5 w-5 rounded-full bg-text shadow-lg ring-0 transition-transform",
-                      optimisticBuzzer ? "translate-x-5 bg-bg" : "translate-x-0 bg-muted"
+                      optimisticBuzzer
+                        ? "translate-x-5 bg-bg"
+                        : "translate-x-0 bg-muted",
                     )}
                   />
                 </SwitchPrimitive.Root>
@@ -565,9 +598,12 @@ export default function ControlPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Saved Range */}
           <div className="p-4 rounded-xl bg-white/[0.02] border border-border/40 space-y-1">
-            <span className="text-xs text-muted block">Saved Trigger Range</span>
+            <span className="text-xs text-muted block">
+              Saved Trigger Range
+            </span>
             <p className="text-xl font-bold font-mono text-text">
-              {control.minCm} &mdash; {control.maxCm} <span className="text-xs text-muted">cm</span>
+              {control.minCm} &mdash; {control.maxCm}{" "}
+              <span className="text-xs text-muted">cm</span>
             </p>
             <p className="text-[11px] text-muted">
               Delta width: {control.maxCm - control.minCm} cm
@@ -580,7 +616,7 @@ export default function ControlPage() {
             <p
               className={cn(
                 "text-xl font-bold",
-                control.buzzerEnabled ? "text-accent" : "text-muted"
+                control.buzzerEnabled ? "text-accent" : "text-muted",
               )}
             >
               {control.buzzerEnabled ? "Enabled" : "Muted"}
@@ -592,11 +628,13 @@ export default function ControlPage() {
 
           {/* Saved System State */}
           <div className="p-4 rounded-xl bg-white/[0.02] border border-border/40 space-y-1">
-            <span className="text-xs text-muted block">Master System State</span>
+            <span className="text-xs text-muted block">
+              Master System State
+            </span>
             <p
               className={cn(
                 "text-xl font-bold",
-                control.armed ? "text-success" : "text-muted"
+                control.armed ? "text-success" : "text-muted",
               )}
             >
               {control.armed ? "Armed" : "Disarmed"}

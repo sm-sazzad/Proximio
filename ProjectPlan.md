@@ -32,34 +32,34 @@ Do not rename, remove or restructure these fields. The firmware depends on them.
 
 ### `/live` (written by ESP32)
 
-| Field | Type | Meaning |
-|---|---|---|
-| `distance` | number | Distance in cm. `-1` means no echo / no reading. |
-| `status` | string | `"safe"`, `"alert"`, `"nosensor"` or `"disarmed"` |
-| `rssi` | number | WiFi signal in dBm (closer to 0 is better; -50 is excellent) |
-| `uptime` | number | Seconds since the ESP32 booted |
-| `events` | number | Count of alarm events since boot (resets on reboot) |
-| `lastEventMin` | number | Closest distance (cm) of the latest alarm event |
-| `ts` | number | Server timestamp in ms of the last update |
+| Field          | Type   | Meaning                                                      |
+| -------------- | ------ | ------------------------------------------------------------ |
+| `distance`     | number | Distance in cm. `-1` means no echo / no reading.             |
+| `status`       | string | `"safe"`, `"alert"`, `"nosensor"` or `"disarmed"`            |
+| `rssi`         | number | WiFi signal in dBm (closer to 0 is better; -50 is excellent) |
+| `uptime`       | number | Seconds since the ESP32 booted                               |
+| `events`       | number | Count of alarm events since boot (resets on reboot)          |
+| `lastEventMin` | number | Closest distance (cm) of the latest alarm event              |
+| `ts`           | number | Server timestamp in ms of the last update                    |
 
 ### `/control` (written by the website, read by ESP32)
 
-| Field | Type | Meaning |
-|---|---|---|
-| `minCm` | number | Lower bound of the alert range (>= 0) |
-| `maxCm` | number | Upper bound of the alert range (> minCm, <= 400) |
+| Field           | Type    | Meaning                                                  |
+| --------------- | ------- | -------------------------------------------------------- |
+| `minCm`         | number  | Lower bound of the alert range (>= 0)                    |
+| `maxCm`         | number  | Upper bound of the alert range (> minCm, <= 400)         |
 | `buzzerEnabled` | boolean | If false, the alarm is shown but the buzzer stays silent |
-| `armed` | boolean | If false, the system never alarms |
+| `armed`         | boolean | If false, the system never alarms                        |
 
 Defaults created by the firmware: `minCm 10`, `maxCm 50`, `buzzerEnabled true`, `armed true`.
 
 ### `/logs` (written by ESP32, one push-id entry per finished alarm event)
 
-| Field | Type | Meaning |
-|---|---|---|
-| `minDistance` | number | Closest distance (cm) during the event |
-| `durationMs` | number | How long the object stayed in range |
-| `ts` | number | Server timestamp when the event was recorded |
+| Field         | Type   | Meaning                                      |
+| ------------- | ------ | -------------------------------------------- |
+| `minDistance` | number | Closest distance (cm) during the event       |
+| `durationMs`  | number | How long the object stayed in range          |
+| `ts`          | number | Server timestamp when the event was recorded |
 
 ### Notes
 
@@ -86,17 +86,17 @@ Proximo must look like a **premium commercial product**, not a student template.
 
 **Design tokens (dark theme only):**
 
-| Role | Value |
-|---|---|
-| Background | `#0A0F1C` |
-| Card | `#121A2B` |
-| Border | `rgba(255,255,255,0.08)` |
-| Text | `#E6EDF7` |
-| Muted text | `#8A97AD` |
-| Accent (cyan) | `#22D3EE` |
-| Success | `#34D399` |
-| Warning | `#F59E0B` |
-| Danger | `#F43F5E` |
+| Role          | Value                    |
+| ------------- | ------------------------ |
+| Background    | `#0A0F1C`                |
+| Card          | `#121A2B`                |
+| Border        | `rgba(255,255,255,0.08)` |
+| Text          | `#E6EDF7`                |
+| Muted text    | `#8A97AD`                |
+| Accent (cyan) | `#22D3EE`                |
+| Success       | `#34D399`                |
+| Warning       | `#F59E0B`                |
+| Danger        | `#F43F5E`                |
 
 **Rules:**
 
@@ -126,7 +126,7 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 - [x] Step 3 — Live dashboard
 - [x] Step 4 — Live chart
 - [x] Step 5 — Control panel
-- [ ] Step 6 — History and analytics
+- [x] Step 6 — History and analytics
 - [ ] Step 7 — Smart insights
 - [ ] Step 8 — About page and polish
 - [ ] Step 9 — Deploy to Vercel
@@ -144,6 +144,7 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 ### Step 3 — Live dashboard (home)
 
 **Build:**
+
 - Hero distance card with an animated number ticker.
 - Status card with four states: safe (green), alert (red, pulsing glow), no sensor (amber), disarmed (grey).
 - Device card: online/offline, last update, WiFi signal bars from `rssi`, formatted uptime.
