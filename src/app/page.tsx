@@ -5,6 +5,7 @@ import { useControl } from "@/hooks/useControl";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { GlassCard } from "@/components/GlassCard";
 import { RadarGauge } from "@/components/RadarGauge";
+import { LiveChart } from "@/components/LiveChart";
 import { NumberTicker } from "@/components/NumberTicker";
 import { WifiSignal } from "@/components/WifiSignal";
 import { Skeleton } from "@/components/Skeleton";
@@ -52,6 +53,7 @@ export default function DashboardPage() {
           <Skeleton className="lg:col-span-7 h-80 rounded-xl" />
           <Skeleton className="lg:col-span-5 h-80 rounded-xl" />
         </div>
+        <Skeleton className="h-72 w-full rounded-xl" />
       </div>
     );
   }
@@ -379,6 +381,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Full-Width Live Distance Chart (Step 4) ───────────────────────── */}
+      <LiveChart />
     </div>
   );
 }
