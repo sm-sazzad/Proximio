@@ -129,6 +129,7 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 - [x] Step 6 — History and analytics
 - [x] Step 7 — Smart insights
 - [x] Step 8 — About page and polish
+- [x] Step 8b — Developer page
 - [ ] Step 9 — Deploy to Vercel
 
 ### Step 1 — Foundation
@@ -176,6 +177,10 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 
 **Build:** an About / How it works page with an animated architecture flow (ESP32 → Firebase → Dashboard), hardware list, pin map table, tech stack and an editable team section; then a full polish pass: skeletons and error states everywhere, responsive check at 360 / 768 / 1280 px, keyboard focus, aria labels, reduced motion, metadata and OG image, remove all debug leftovers, micro-interactions.
 **Done when:** desktop Lighthouse performance and accessibility are 90 or higher.
+
+### Step 8b — Developer page
+
+**Build:** an in-app `/developer` profile page featuring a round avatar from `/developer.png` (with initials fallback), bio, educational credentials, social links (portfolio, CV, GitHub, LinkedIn, email), grouped technical skills matrix, and compact cards for selected projects. Single editable source of truth in `src/config/project.ts`. Desktop sidebar bottom item and 5th mobile bottom tab bar item with touch targets >= 44px.
 
 ### Step 9 — Deploy to Vercel
 

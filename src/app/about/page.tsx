@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { GlassCard } from "@/components/GlassCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ProximoLogo } from "@/components/ProximoLogo";
@@ -23,6 +24,7 @@ import {
   GraduationCap,
   Layers,
   Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -586,9 +588,13 @@ export default function AboutPage() {
             </span>
             <span>{projectConfig.institution}</span>
           </div>
-          <span className="text-[11px] text-muted/60">
-            Open-source IoT Demonstrator
-          </span>
+          <Link
+            href="/developer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent/80 transition-colors"
+          >
+            <span>View Developer Profile</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
       </GlassCard>
     </div>
