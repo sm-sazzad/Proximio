@@ -123,7 +123,7 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 
 - [x] Step 1 — Foundation
 - [x] Step 2 — App shell and design system
-- [ ] Step 3 — Live dashboard
+- [x] Step 3 — Live dashboard
 - [ ] Step 4 — Live chart
 - [ ] Step 5 — Control panel
 - [ ] Step 6 — History and analytics
