@@ -15,7 +15,7 @@ import {
   Minus,
   HelpCircle,
   Info,
-  CheckCircle2,
+  Radio,
   AlertTriangle,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -23,18 +23,25 @@ import { cn } from "@/lib/utils";
 
 /**
  * Smart Insights component:
- * 1) Motion Card: Direction (Approaching/Moving away/Steady) with animated arrow and speed in cm/s.
- * 2) Prediction Card: Time-to-contact estimates (Enters alert zone / Reaches sensor / Inside alert zone).
- * 3) Zone Card: Segmented bar (Danger / Caution / Clear) with distance marker.
- * Plus an honest data-rate limitation note.
+ * 1) Motion Card: Direction with animated arrow, 10s regression window, 4s hold with dimmed indicator,
+ *    and seamless placeholder state inside the same card (No echo / Device offline / Disarmed / Not enough data yet).
+ * 2) Prediction Card: Time-to-contact estimates aligned strictly with firmware alert zone [minCm, maxCm].
+ * 3) Zone Card: Segmented bar with below-range grey segment, Danger, Caution, Clear, and distance pin marker.
  */
 export function SmartInsights() {
   const live = useLive();
   const { control } = useControl();
-  const { direction, speedCmS, confidence, sampleCount } = useMotionInsights();
+  const {
+    direction,
+    speedCmS,
+    confidence,
+    sampleCount,
+    isHolding,
+    placeholderReason,
+  } = useMotionInsights();
   const prefersReducedMotion = useReducedMotion();
 
-  // If live data has not loaded, show skeletons
+  // If live data has not loaded at all yet, show matched skeleton
   if (!live) {
     return (
       <div className="space-y-3">
@@ -54,12 +61,13 @@ export function SmartInsights() {
   const isNoEcho = distance === -1;
   const isDisarmed = live.status === "disarmed";
 
-  // Alert range calculations (split into 3 equal bands: 1/3 Near = Danger, 2/3 Mid+Far = Caution)
-  const rangeSpan = Math.max(1, maxCm - minCm);
-  const dangerThreshold = minCm + rangeSpan / 3;
+  // Alert range calculations (strictly [minCm, maxCm])
+  // Split into 3 equal bands: nearest third = Danger, other two thirds = Caution
+  const alertSpan = Math.max(1, maxCm - minCm);
+  const dangerThreshold = minCm + alertSpan / 3;
 
-  // Determine current proximity zone
-  let zoneState: "danger" | "caution" | "clear" | "disarmed" | "noecho" = "clear";
+  // Determine current proximity zone matching firmware contract
+  let zoneState: "danger" | "caution" | "clear" | "below" | "disarmed" | "noecho" = "clear";
   let zoneLabel = "Clear Zone";
   let zoneDescription = "Outside alert range";
 
@@ -71,6 +79,11 @@ export function SmartInsights() {
     zoneState = "noecho";
     zoneLabel = "No reading";
     zoneDescription = "No ultrasonic echo";
+  } else if (distance < minCm) {
+    // Distance below alert range (firmware does not trigger alarm)
+    zoneState = "below";
+    zoneLabel = "Below alert range";
+    zoneDescription = `Below alert range (under ${minCm} cm)`;
   } else if (distance > maxCm) {
     zoneState = "clear";
     zoneLabel = "Clear Zone";
@@ -80,13 +93,13 @@ export function SmartInsights() {
     zoneLabel = "Caution Zone";
     zoneDescription = `Alert perimeter (${Math.round(dangerThreshold)}–${maxCm} cm)`;
   } else {
-    // distance < dangerThreshold
+    // minCm <= distance < dangerThreshold
     zoneState = "danger";
     zoneLabel = "Danger Zone";
     zoneDescription = `Immediate proximity (${minCm}–${Math.round(dangerThreshold)} cm)`;
   }
 
-  // Prediction calculations (Time to Enter Alert Zone & Time to Reach Sensor)
+  // Prediction calculations matching firmware rules
   const isApproaching = direction === "Approaching" && speedCmS >= 1.0 && !isNoEcho && !isDisarmed;
   let predictionHero = "No approach detected";
   let predictionSub = "Target is stationary or receding";
@@ -98,11 +111,23 @@ export function SmartInsights() {
   } else if (isNoEcho) {
     predictionHero = "Waiting for echo";
     predictionSub = "Valid reflection needed for prediction";
-  } else if (direction === "Unknown") {
-    predictionHero = "Waiting for data...";
-    predictionSub = "Accumulating movement samples";
+  } else if (distance < minCm) {
+    predictionHero = "Below alert range";
+    predictionTone = "neutral";
+    if (isApproaching && speedCmS >= 1.0) {
+      const timeToSensor = distance / speedCmS;
+      const tSensorStr =
+        timeToSensor > 60 ? "more than 1 min" : `${Math.max(1, Math.round(timeToSensor))} s`;
+      predictionSub = `Reaches the sensor in about ${tSensorStr}`;
+    } else {
+      predictionSub = `Under trigger threshold (< ${minCm} cm)`;
+    }
+  } else if (placeholderReason) {
+    predictionHero = placeholderReason;
+    predictionSub = "Kinematics currently paused";
   } else if (isApproaching) {
     if (distance <= maxCm && distance >= minCm) {
+      // Inside the alert zone
       predictionHero = "Inside the alert zone";
       predictionTone = "danger";
 
@@ -111,6 +136,7 @@ export function SmartInsights() {
         timeToSensor > 60 ? "more than 1 min" : `${Math.max(1, Math.round(timeToSensor))} s`;
       predictionSub = `Reaches the sensor in about ${tSensorStr}`;
     } else if (distance > maxCm) {
+      // Outside alert zone approaching
       predictionTone = "cyan";
       const timeToZone = (distance - maxCm) / speedCmS;
       const tZoneStr =
@@ -122,11 +148,6 @@ export function SmartInsights() {
       const tSensorStr =
         timeToSensor > 60 ? "more than 1 min" : `${Math.max(1, Math.round(timeToSensor))} s`;
       predictionSub = `Reaches the sensor in about ${tSensorStr}`;
-    } else {
-      // distance < minCm
-      predictionHero = "Inside the alert zone";
-      predictionTone = "danger";
-      predictionSub = `Sensor deadzone threshold (< ${minCm} cm)`;
     }
   } else if (direction === "Moving away") {
     predictionHero = "Moving away";
@@ -138,15 +159,18 @@ export function SmartInsights() {
   }
 
   // Zone track visual metrics
-  // Scale bar from 0 to scaleMax (at least maxCm * 1.25)
+  // Scale bar from 0 to scaleMax (at least maxCm * 1.3)
   const scaleMax = Math.max(100, Math.round(maxCm * 1.3));
   const markerPercent =
     !isNoEcho && distance >= 0
       ? Math.min(100, Math.max(0, (distance / scaleMax) * 100))
       : null;
 
-  const dangerEndPct = (dangerThreshold / scaleMax) * 100;
-  const cautionEndPct = (maxCm / scaleMax) * 100;
+  // Segment widths percentage
+  const belowRangePct = (minCm / scaleMax) * 100;
+  const dangerPct = ((dangerThreshold - minCm) / scaleMax) * 100;
+  const cautionPct = ((maxCm - dangerThreshold) / scaleMax) * 100;
+  const clearPct = ((scaleMax - maxCm) / scaleMax) * 100;
 
   return (
     <div className="space-y-3">
@@ -163,43 +187,58 @@ export function SmartInsights() {
 
       {/* ── Three Insight Cards Row ────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* 1) MOTION CARD */}
-        <GlassCard hover className="p-5 flex flex-col justify-between relative overflow-hidden">
+        {/* 1) MOTION CARD — Always visible, fixed height, seamless states */}
+        <GlassCard hover className="p-5 flex flex-col justify-between relative overflow-hidden min-h-[175px]">
           <div className="flex items-center justify-between text-muted mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Motion Analysis</span>
-            <span
-              className={cn(
-                "text-[10px] font-mono px-2 py-0.5 rounded-full border capitalize",
-                confidence === "high"
-                  ? "border-accent/40 bg-accent/10 text-accent"
-                  : confidence === "medium"
-                  ? "border-white/10 bg-white/[0.03] text-muted"
-                  : "border-border/40 text-muted/60"
-              )}
-            >
-              {direction === "Unknown" ? "Calibrating" : `${confidence} conf`}
-            </span>
+            {isHolding ? (
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border border-warning/40 bg-warning/10 text-warning animate-pulse">
+                holding last reading
+              </span>
+            ) : placeholderReason ? (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border border-border/50 bg-white/[0.02] text-muted/70">
+                Standby
+              </span>
+            ) : (
+              <span
+                className={cn(
+                  "text-[10px] font-mono px-2 py-0.5 rounded-full border capitalize",
+                  confidence === "high"
+                    ? "border-accent/40 bg-accent/10 text-accent"
+                    : confidence === "medium"
+                    ? "border-white/10 bg-white/[0.03] text-muted"
+                    : "border-border/40 text-muted/60"
+                )}
+              >
+                {confidence} conf
+              </span>
+            )}
           </div>
 
-          <div className="my-2 flex items-center gap-4">
+          <div
+            className={cn(
+              "my-2 flex items-center gap-4 transition-opacity duration-300",
+              isHolding && "opacity-70"
+            )}
+          >
             {/* Animated Direction Indicator */}
             <div
               className={cn(
                 "h-14 w-14 shrink-0 rounded-2xl flex items-center justify-center border transition-all duration-300",
-                direction === "Approaching"
+                placeholderReason
+                  ? "border-border/50 bg-white/[0.02] text-muted/60"
+                  : direction === "Approaching"
                   ? "border-accent/50 bg-accent/15 text-accent shadow-[0_0_20px_rgba(34,211,238,0.25)]"
                   : direction === "Moving away"
                   ? "border-white/20 bg-white/[0.04] text-text/80"
                   : "border-border/50 bg-white/[0.02] text-muted"
               )}
             >
-              {direction === "Approaching" ? (
+              {placeholderReason ? (
+                <Radio className="h-6 w-6 opacity-40" />
+              ) : direction === "Approaching" ? (
                 <motion.div
-                  animate={
-                    prefersReducedMotion
-                      ? undefined
-                      : { y: [0, 4, 0] }
-                  }
+                  animate={prefersReducedMotion ? undefined : { y: [0, 4, 0] }}
                   transition={{
                     repeat: Infinity,
                     duration: 1.2,
@@ -211,11 +250,7 @@ export function SmartInsights() {
                 </motion.div>
               ) : direction === "Moving away" ? (
                 <motion.div
-                  animate={
-                    prefersReducedMotion
-                      ? undefined
-                      : { y: [0, -4, 0] }
-                  }
+                  animate={prefersReducedMotion ? undefined : { y: [0, -4, 0] }}
                   transition={{
                     repeat: Infinity,
                     duration: 1.2,
@@ -237,19 +272,21 @@ export function SmartInsights() {
               <p
                 className={cn(
                   "text-sm font-bold tracking-tight truncate",
-                  direction === "Approaching"
+                  placeholderReason
+                    ? "text-muted"
+                    : direction === "Approaching"
                     ? "text-accent"
                     : direction === "Moving away"
                     ? "text-text"
                     : "text-muted"
                 )}
               >
-                {direction === "Unknown" ? "Waiting for data..." : direction}
+                {placeholderReason ?? direction}
               </p>
 
               <div className="flex items-baseline gap-1.5 mt-0.5">
                 <span className="text-2xl sm:text-3xl font-extrabold font-mono text-text tracking-tight">
-                  {direction === "Unknown" || direction === "Steady"
+                  {placeholderReason || direction === "Steady"
                     ? "--"
                     : speedCmS.toFixed(1)}
                 </span>
@@ -260,12 +297,18 @@ export function SmartInsights() {
 
           <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted font-mono">
             <span>Linear regression</span>
-            <span>{sampleCount} {sampleCount === 1 ? "sample" : "samples"} (rolling)</span>
+            <span>
+              {isHolding
+                ? "holding last reading"
+                : placeholderReason
+                ? placeholderReason
+                : `${sampleCount} ${sampleCount === 1 ? "sample" : "samples"} (10s)`}
+            </span>
           </div>
         </GlassCard>
 
         {/* 2) PREDICTION CARD */}
-        <GlassCard hover className="p-5 flex flex-col justify-between relative overflow-hidden">
+        <GlassCard hover className="p-5 flex flex-col justify-between relative overflow-hidden min-h-[175px]">
           <div className="flex items-center justify-between text-muted mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
               <Timer className="h-3.5 w-3.5 text-accent" />
@@ -309,7 +352,7 @@ export function SmartInsights() {
         </GlassCard>
 
         {/* 3) ZONE CARD */}
-        <GlassCard hover className="p-5 flex flex-col justify-between relative overflow-hidden">
+        <GlassCard hover className="p-5 flex flex-col justify-between relative overflow-hidden min-h-[175px]">
           <div className="flex items-center justify-between text-muted mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
               <ShieldAlert className="h-3.5 w-3.5 text-accent" />
@@ -331,24 +374,30 @@ export function SmartInsights() {
             </span>
           </div>
 
-          {/* Segmented Bar Track */}
+          {/* Segmented Bar Track: [Grey (< minCm) | Red (Danger) | Amber (Caution) | Green (Clear)] */}
           <div className="my-2 space-y-2">
             <div className="relative w-full h-3 rounded-full bg-white/[0.04] p-0.5 overflow-hidden flex border border-border/40">
-              {/* Danger segment (red) */}
+              {/* Neutral grey segment for distance below alert range (< minCm) */}
               <div
-                style={{ width: `${dangerEndPct}%` }}
-                className="h-full bg-danger/40 border-r border-danger/60 rounded-l-full"
-                title={`Danger zone: 0 to ${Math.round(dangerThreshold)} cm`}
+                style={{ width: `${belowRangePct}%` }}
+                className="h-full bg-white/[0.06] border-r border-border/80 rounded-l-full"
+                title={`Below alert range: 0 to ${minCm} cm`}
               />
-              {/* Caution segment (amber) */}
+              {/* Danger segment (red, nearest third of [minCm, maxCm]) */}
               <div
-                style={{ width: `${cautionEndPct - dangerEndPct}%` }}
+                style={{ width: `${dangerPct}%` }}
+                className="h-full bg-danger/40 border-r border-danger/60"
+                title={`Danger zone: ${minCm} to ${Math.round(dangerThreshold)} cm`}
+              />
+              {/* Caution segment (amber, upper two thirds of [minCm, maxCm]) */}
+              <div
+                style={{ width: `${cautionPct}%` }}
                 className="h-full bg-warning/35 border-r border-warning/60"
                 title={`Caution zone: ${Math.round(dangerThreshold)} to ${maxCm} cm`}
               />
-              {/* Clear segment (emerald/cyan) */}
+              {/* Clear segment (emerald/cyan, beyond maxCm) */}
               <div
-                style={{ width: `${100 - cautionEndPct}%` }}
+                style={{ width: `${clearPct}%` }}
                 className="h-full bg-success/20 rounded-r-full"
                 title={`Clear zone: > ${maxCm} cm`}
               />
@@ -365,6 +414,10 @@ export function SmartInsights() {
 
             {/* Labels under the bar */}
             <div className="flex items-center justify-between text-[10px] text-muted font-mono pt-0.5">
+              <span className="flex items-center gap-1 text-muted/70">
+                <span className="h-1.5 w-1.5 rounded-full bg-muted/60" />
+                <span>&lt;{minCm}cm</span>
+              </span>
               <span className="flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-danger" />
                 <span>Danger ({minCm}–{Math.round(dangerThreshold)})</span>
@@ -395,4 +448,3 @@ export function SmartInsights() {
     </div>
   );
 }
-
