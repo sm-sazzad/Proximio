@@ -8,6 +8,7 @@ export interface TeamMember {
   role: string;
   avatar?: string;
   github?: string;
+  isLead?: boolean;
 }
 
 export interface ProjectItem {
@@ -66,7 +67,40 @@ export const projectConfig: ProjectConfig = {
   team: [
     {
       name: "Sheikh Md Sazzad Hossain",
-      role: "Lead Developer & Embedded Systems",
+      role: "Team Lead & Full-Stack / IoT Developer",
+      isLead: true,
+    },
+    {
+      name: "Adnan Karim Riad",
+      role: "Hardware Assembly & Circuit Testing",
+    },
+    {
+      name: "AL Imran Jony",
+      role: "Embedded Systems & Sensor Calibration",
+    },
+    {
+      name: "Antora Sarkar",
+      role: "Technical Documentation & Analysis",
+    },
+    {
+      name: "Hamim Kefayet",
+      role: "Hardware Prototyping & Power Testing",
+    },
+    {
+      name: "Rï Æd",
+      role: "Component Integration & Quality Check",
+    },
+    {
+      name: "Samira Islam",
+      role: "UI/UX Research & Presentation",
+    },
+    {
+      name: "Sanzidur Rahman Santo",
+      role: "IoT Telemetry & Network Testing",
+    },
+    {
+      name: "Shakibul Islam",
+      role: "Firmware Verification & System Testing",
     },
   ],
   developer: {

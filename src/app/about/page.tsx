@@ -559,20 +559,39 @@ export default function AboutPage() {
         </div>
 
         {/* Team Members Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {projectConfig.team.map((member, idx) => (
             <div
               key={idx}
-              className="p-4 rounded-xl border border-border/60 bg-white/[0.02] space-y-2 hover:border-accent/30 transition-colors"
+              className={cn(
+                "p-4 rounded-xl border bg-white/[0.02] space-y-2 transition-colors relative overflow-hidden",
+                member.isLead
+                  ? "border-accent/50 bg-accent/[0.04] shadow-[0_0_20px_-8px_rgba(6,182,212,0.25)]"
+                  : "border-border/60 hover:border-accent/30"
+              )}
             >
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center text-accent font-bold font-mono text-sm">
+                <div
+                  className={cn(
+                    "h-10 w-10 rounded-full border flex items-center justify-center font-bold font-mono text-sm shrink-0",
+                    member.isLead
+                      ? "bg-accent/20 border-accent/60 text-accent ring-2 ring-accent/20"
+                      : "bg-accent/10 border-accent/30 text-accent"
+                  )}
+                >
                   {member.name.charAt(0)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-bold text-sm text-text truncate">
-                    {member.name}
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-sm text-text truncate">
+                      {member.name}
+                    </h4>
+                    {member.isLead && (
+                      <span className="shrink-0 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/40">
+                        Admin
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted truncate">{member.role}</p>
                 </div>
               </div>
