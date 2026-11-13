@@ -58,7 +58,7 @@ export const projectConfig: ProjectConfig = {
   tagline: "Proximity, in real time.",
   description:
     "An ESP32 and an ultrasonic sensor measure distance, and this dashboard shows and controls it live from any device.",
-  courseName: "Microcontroller-Based Systems",
+  courseName: "Microcontroller-Based Systems Design And Development",
   institution: "Kushtia Polytechnic Institute",
   semester: "Diploma in Engineering (CST)",
   year: "2026",

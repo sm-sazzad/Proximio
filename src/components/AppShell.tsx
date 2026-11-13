@@ -61,7 +61,7 @@ export function AppShell({ children }: AppShellProps) {
       <div className="flex flex-1 w-full">
         {/* ── Sidebar (desktop md+) ──────────────────────────────────── */}
         <aside
-          className="hidden md:flex flex-col justify-between w-56 shrink-0 sticky top-14 h-[calc(100vh-3.5rem)] border-r border-border bg-bg/60 backdrop-blur-sm p-3 pt-5 overflow-y-auto"
+          className="hidden md:flex flex-col w-56 shrink-0 sticky top-14 h-[calc(100vh-3.5rem)] border-r border-border bg-bg/60 backdrop-blur-sm p-3 pt-5 overflow-y-auto"
           aria-label="Main navigation"
         >
           {/* Main Navigation Links */}
@@ -87,25 +87,26 @@ export function AppShell({ children }: AppShellProps) {
                 </li>
               );
             })}
-          </ul>
 
-          {/* Bottom Developer Item with Subtle Divider */}
-          <div className="pt-3 border-t border-border/50 pb-2">
-            <Link
-              href={developerNavItem.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-                pathname === developerNavItem.href
-                  ? "bg-accent/10 text-accent font-semibold"
-                  : "text-muted hover:text-text hover:bg-white/[0.04]",
-              )}
-              aria-current={pathname === developerNavItem.href ? "page" : undefined}
-            >
-              <developerNavItem.icon className="h-4.5 w-4.5" />
-              <span>{developerNavItem.label}</span>
-            </Link>
-          </div>
+            {/* Developer Item Placed Directly Below About */}
+            <li className="pt-2">
+              <div className="border-t border-border/50 mb-2" />
+              <Link
+                href={developerNavItem.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                  pathname === developerNavItem.href
+                    ? "bg-accent/10 text-accent font-semibold"
+                    : "text-muted hover:text-text hover:bg-white/[0.04]",
+                )}
+                aria-current={pathname === developerNavItem.href ? "page" : undefined}
+              >
+                <developerNavItem.icon className="h-4.5 w-4.5" />
+                <span>{developerNavItem.label}</span>
+              </Link>
+            </li>
+          </ul>
         </aside>
 
         {/* ── Main Content Area ────────────────────────────────────────── */}
