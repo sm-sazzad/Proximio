@@ -41,6 +41,9 @@ export default function HistoryPage() {
   // Filter: '24h' | 'all'
   const [filterRange, setFilterRange] = useState<"24h" | "all">("24h");
 
+  // Hover state for hourly bar chart
+  const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
+
   // Pagination for event list
   const [visibleCount, setVisibleCount] = useState<number>(20);
 
@@ -342,7 +345,16 @@ export default function HistoryPage() {
 
               <div className="h-56 sm:h-64 w-full pt-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={hourlyData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <BarChart
+                    data={hourlyData}
+                    margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                    onMouseMove={(state) => {
+                      if (state && state.activeTooltipIndex !== undefined) {
+                        setHoveredBarIndex(Number(state.activeTooltipIndex));
+                      }
+                    }}
+                    onMouseLeave={() => setHoveredBarIndex(null)}
+                  >
                     <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" vertical={false} />
                     <XAxis
                       dataKey="hourLabel"
@@ -360,6 +372,13 @@ export default function HistoryPage() {
                       axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
                     />
                     <Tooltip
+                      cursor={{
+                        fill: "rgba(34, 211, 238, 0.04)",
+                        stroke: "rgba(34, 211, 238, 0.15)",
+                        strokeWidth: 1,
+                        strokeDasharray: "3 3",
+                        rx: 4,
+                      }}
                       content={({ active, payload }) => {
                         if (!active || !payload || !payload.length) return null;
                         const item = payload[0].payload as {
@@ -369,25 +388,46 @@ export default function HistoryPage() {
                           timeRange: string;
                         };
                         return (
-                          <div className="rounded-lg border border-border bg-card/95 p-2.5 shadow-xl backdrop-blur-md text-xs font-mono space-y-1">
-                            <p className="text-muted text-[11px]">{item.timeRange}</p>
-                            <p className="font-bold text-accent">
-                              {item.count} {item.count === 1 ? "alarm event" : "alarm events"}
-                            </p>
-                            {item.isCurrentHour && (
-                              <p className="text-[10px] text-cyan-400 font-semibold">Current Hour</p>
-                            )}
+                          <div className="rounded-lg border border-cyan-500/20 bg-card/95 p-2.5 shadow-xl backdrop-blur-md text-xs font-mono space-y-1.5 min-w-[130px]">
+                            <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-1">
+                              <p className="text-muted text-[11px] font-medium">{item.timeRange}</p>
+                              {item.isCurrentHour && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-semibold border border-cyan-500/20">
+                                  Current
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-baseline gap-1.5 pt-0.5">
+                              <span className="text-base font-bold text-accent">{item.count}</span>
+                              <span className="text-[11px] text-muted">
+                                {item.count === 1 ? "alarm event" : "alarm events"}
+                              </span>
+                            </div>
                           </div>
                         );
                       }}
                     />
                     <Bar dataKey="count" radius={[3, 3, 0, 0]} isAnimationActive={false}>
-                      {hourlyData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={entry.isCurrentHour ? "#22D3EE" : "rgba(34, 211, 238, 0.4)"}
-                        />
-                      ))}
+                      {hourlyData.map((entry, index) => {
+                        const isHovered = hoveredBarIndex === index;
+                        const isCurrent = entry.isCurrentHour;
+                        const fill = isCurrent
+                          ? (isHovered ? "#67E8F9" : "#22D3EE")
+                          : (isHovered ? "#22D3EE" : "rgba(34, 211, 238, 0.4)");
+
+                        return (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={fill}
+                            opacity={hoveredBarIndex === null || isHovered ? 1 : 0.45}
+                            style={{
+                              transition: "opacity 0.15s ease, fill 0.15s ease",
+                              filter: isHovered && entry.count > 0 ? "drop-shadow(0 0 6px rgba(34, 211, 238, 0.6))" : undefined,
+                              cursor: "pointer",
+                            }}
+                          />
+                        );
+                      })}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
