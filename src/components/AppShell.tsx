@@ -6,6 +6,7 @@ import { LayoutDashboard, Sliders, History, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProximoLogo } from "./ProximoLogo";
 import { ConnectionBadge } from "./ConnectionBadge";
+import { SoundToggle } from "./SoundToggle";
 import type { ReactNode } from "react";
 
 /** Navigation items */
@@ -40,7 +41,10 @@ export function AppShell({ children }: AppShellProps) {
             Proximo
           </span>
         </Link>
-        <ConnectionBadge />
+        <div className="flex items-center gap-2.5">
+          <SoundToggle />
+          <ConnectionBadge />
+        </div>
       </header>
 
       {/* ── Body Container Below Header ───────────────────────────────── */}

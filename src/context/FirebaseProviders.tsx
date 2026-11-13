@@ -6,6 +6,7 @@ import { ControlProvider } from "./ControlProvider";
 import { LogsProvider } from "./LogsProvider";
 import { ServerTimeProvider } from "./ServerTimeProvider";
 import { DistanceBufferProvider } from "./DistanceBufferProvider";
+import { AlertSoundProvider } from "./AlertSoundContext";
 
 /**
  * Wraps all Firebase and persistent state providers into a single component.
@@ -18,7 +19,9 @@ export function FirebaseProviders({ children }: { children: ReactNode }) {
         <ControlProvider>
           <LogsProvider>
             <DistanceBufferProvider>
-              {children}
+              <AlertSoundProvider>
+                {children}
+              </AlertSoundProvider>
             </DistanceBufferProvider>
           </LogsProvider>
         </ControlProvider>

@@ -6,6 +6,7 @@ import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { GlassCard } from "@/components/GlassCard";
 import { RadarGauge } from "@/components/RadarGauge";
 import { LiveChart } from "@/components/LiveChart";
+import { SmartInsights } from "@/components/SmartInsights";
 import { NumberTicker } from "@/components/NumberTicker";
 import { WifiSignal } from "@/components/WifiSignal";
 import { Skeleton } from "@/components/Skeleton";
@@ -52,6 +53,11 @@ export default function DashboardPage() {
           <Skeleton className="lg:col-span-7 h-64 rounded-xl" />
           <Skeleton className="lg:col-span-7 h-80 rounded-xl" />
           <Skeleton className="lg:col-span-5 h-80 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <Skeleton className="h-44 rounded-xl" />
+          <Skeleton className="h-44 rounded-xl" />
+          <Skeleton className="h-44 rounded-xl" />
         </div>
         <Skeleton className="h-72 w-full rounded-xl" />
       </div>
@@ -381,6 +387,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Smart Kinematics & Proximity Insights (Step 7) ───────────────── */}
+      <SmartInsights />
 
       {/* ── Full-Width Live Distance Chart (Step 4) ───────────────────────── */}
       <LiveChart />
