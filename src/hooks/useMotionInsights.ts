@@ -17,11 +17,11 @@ export type MotionPlaceholderReason =
 export interface MotionInsights {
   /** Direction of movement relative to the sensor */
   direction: MotionDirection;
-  /** Speed in cm/s (smoothed absolute value, rounded to 1 decimal) */
+  /** Speed in cm/s (weighted slope absolute value, rounded to 1 decimal) */
   speedCmS: number;
   /** Confidence in the regression fit and sample density */
   confidence: MotionConfidence;
-  /** Raw linear regression slope in cm/s (negative = approaching) */
+  /** Weighted linear regression slope in cm/s (negative = approaching) */
   slope: number;
   /** Number of valid samples used in calculation */
   sampleCount: number;
@@ -31,12 +31,16 @@ export interface MotionInsights {
   placeholderReason: MotionPlaceholderReason | null;
 }
 
+// Exponential weight half-life in seconds (1.5s)
+// lambda = ln(2) / halfLife
+const HALF_LIFE_S = 1.5;
+const LAMBDA = Math.LN2 / HALF_LIFE_S;
+
 /**
- * Computes speed and direction of an object relative to the ultrasonic sensor.
- * Uses a linear regression slope over the last 10 seconds of buffer samples.
- * Recomputes on a 1-second timer and on new data so readings expire correctly.
- * Holds the last reading for up to 4s if samples become insufficient before
- * showing a stable in-card placeholder state.
+ * Computes responsive speed and direction using weighted linear regression
+ * over the last 5 seconds of valid samples. Newer samples are exponentially
+ * weighted (half-life ~1.5s) so reversals show up within 1-2 seconds.
+ * Direction changes require confirmation across 2 consecutive updates.
  */
 export function useMotionInsights(): MotionInsights {
   const samples = useDistanceBuffer();
@@ -53,9 +57,9 @@ export function useMotionInsights(): MotionInsights {
     return () => clearInterval(timer);
   }, []);
 
-  // Persistent refs for hysteresis, smoothing, and transient hold
-  const prevDirectionRef = useRef<MotionDirection>("Unknown");
-  const prevSpeedRef = useRef<number>(0);
+  // Persistent refs for 2-update confirmation, displayed direction, and hold cache
+  const displayedDirectionRef = useRef<MotionDirection>("Unknown");
+  const pendingCandidateRef = useRef<MotionDirection | null>(null);
   const lastValidCalcRef = useRef<{
     time: number;
     insights: Omit<MotionInsights, "isHolding" | "placeholderReason">;
@@ -74,8 +78,8 @@ export function useMotionInsights(): MotionInsights {
       placeholderReason = "No echo";
     }
 
-    // 2. Select valid samples from the last 10 seconds
-    const windowCutoff = serverNow - 10000;
+    // 2. Select valid samples from the last 5 seconds
+    const windowCutoff = serverNow - 5000;
     const validSamples = samples.filter(
       (s) =>
         s.timestamp >= windowCutoff &&
@@ -91,114 +95,108 @@ export function useMotionInsights(): MotionInsights {
       live.status !== "disarmed" &&
       live.distance !== -1;
 
-    // 3. If we have at least 3 valid samples and the device is active, compute regression
+    // 3. Compute weighted linear regression when at least 3 valid samples exist
     if (isDeviceActive && validSamples.length >= 3) {
       const n = validSamples.length;
       const t0 = validSamples[0].timestamp;
 
-      let sumT = 0;
-      let sumD = 0;
+      // Calculate sample weights based on age: w_i = exp(-lambda * delta_t)
+      // and weighted means
+      let sumW = 0;
+      let sumWT = 0;
+      let sumWD = 0;
+
+      const tValues: number[] = new Array(n);
+      const dValues: number[] = new Array(n);
+      const weights: number[] = new Array(n);
 
       for (let i = 0; i < n; i++) {
-        const t = (validSamples[i].timestamp - t0) / 1000; // in seconds
-        const d = validSamples[i].distance!;
-        sumT += t;
-        sumD += d;
-      }
-
-      const meanT = sumT / n;
-      const meanD = sumD / n;
-
-      let sumTD = 0;
-      let sumTT = 0;
-      let sumDD = 0;
-
-      for (let i = 0; i < n; i++) {
+        // Real sample timestamps (server-corrected) as x values in seconds
         const t = (validSamples[i].timestamp - t0) / 1000;
         const d = validSamples[i].distance!;
-        const diffT = t - meanT;
-        const diffD = d - meanD;
+        const ageS = Math.max(0, (serverNow - validSamples[i].timestamp) / 1000);
+        const w = Math.exp(-LAMBDA * ageS);
 
-        sumTD += diffT * diffD;
-        sumTT += diffT * diffT;
-        sumDD += diffD * diffD;
+        tValues[i] = t;
+        dValues[i] = d;
+        weights[i] = w;
+
+        sumW += w;
+        sumWT += w * t;
+        sumWD += w * d;
       }
 
-      const slope = sumTT > 0.001 ? sumTD / sumTT : 0;
-      const rawSpeed = Math.abs(slope);
+      const meanT = sumW > 0 ? sumWT / sumW : 0;
+      const meanD = sumW > 0 ? sumWD / sumW : 0;
 
-      // Smooth speed with exponential moving average to prevent display jitter
-      const prevSpeed = prevSpeedRef.current;
-      const smoothedSpeed =
-        prevSpeed > 0
-          ? Math.round((prevSpeed * 0.35 + rawSpeed * 0.65) * 10) / 10
-          : Math.round(rawSpeed * 10) / 10;
-      prevSpeedRef.current = smoothedSpeed;
+      let sumWTT = 0;
+      let sumWTD = 0;
+      let sumWDD = 0;
 
-      // Direction determination with Hysteresis
-      // - Steady threshold is around 2.0 cm/s
-      // - Transition from Steady requires > 2.2 cm/s
-      // - Return to Steady requires < 1.7 cm/s
-      const prev = prevDirectionRef.current;
-      let newDirection: MotionDirection = "Steady";
+      for (let i = 0; i < n; i++) {
+        const diffT = tValues[i] - meanT;
+        const diffD = dValues[i] - meanD;
+        const w = weights[i];
 
-      if (prev === "Steady") {
-        if (slope < -2.2) {
-          newDirection = "Approaching";
-        } else if (slope > 2.2) {
-          newDirection = "Moving away";
-        } else {
-          newDirection = "Steady";
-        }
-      } else if (prev === "Approaching") {
-        if (slope > -1.7 && slope < 2.0) {
-          newDirection = "Steady";
-        } else if (slope >= 2.0) {
-          newDirection = "Moving away";
-        } else {
-          newDirection = "Approaching";
-        }
-      } else if (prev === "Moving away") {
-        if (slope < 1.7 && slope > -2.0) {
-          newDirection = "Steady";
-        } else if (slope <= -2.0) {
-          newDirection = "Approaching";
-        } else {
-          newDirection = "Moving away";
-        }
+        sumWTT += w * diffT * diffT;
+        sumWTD += w * diffT * diffD;
+        sumWDD += w * diffD * diffD;
+      }
+
+      // Weighted slope in cm/s (negative = approaching)
+      const weightedSlope = sumWTT > 0.0001 ? sumWTD / sumWTT : 0;
+      const rawSpeed = Math.abs(weightedSlope);
+      const speedCmS = Math.round(rawSpeed * 10) / 10;
+
+      // Raw candidate direction: Steady if absolute speed < 2.0 cm/s
+      let candidate: MotionDirection = "Steady";
+      if (rawSpeed >= 2.0) {
+        candidate = weightedSlope < 0 ? "Approaching" : "Moving away";
+      }
+
+      // 4. Confirmation logic: change displayed direction only after 2 consecutive updates
+      let currentDisplayed = displayedDirectionRef.current;
+
+      if (currentDisplayed === "Unknown") {
+        // First initialization: accept immediately
+        currentDisplayed = candidate;
+        displayedDirectionRef.current = candidate;
+        pendingCandidateRef.current = null;
+      } else if (candidate === currentDisplayed) {
+        // Consistent with currently displayed direction
+        pendingCandidateRef.current = null;
       } else {
-        // From Unknown / Initializing
-        if (rawSpeed < 2.0) {
-          newDirection = "Steady";
-        } else if (slope <= -2.0) {
-          newDirection = "Approaching";
+        // Candidate differs from current displayed direction
+        if (pendingCandidateRef.current === candidate) {
+          // Confirmed on 2 consecutive updates!
+          currentDisplayed = candidate;
+          displayedDirectionRef.current = candidate;
+          pendingCandidateRef.current = null;
         } else {
-          newDirection = "Moving away";
+          // First observation of new direction: hold previous displayed direction
+          pendingCandidateRef.current = candidate;
         }
       }
 
-      prevDirectionRef.current = newDirection;
-
-      // Confidence scoring
+      // 5. Weighted confidence scoring
       let ssRes = 0;
       for (let i = 0; i < n; i++) {
-        const t = (validSamples[i].timestamp - t0) / 1000;
-        const d = validSamples[i].distance!;
-        const pred = meanD + slope * (t - meanT);
-        ssRes += (d - pred) * (d - pred);
+        const pred = meanD + weightedSlope * (tValues[i] - meanT);
+        const err = dValues[i] - pred;
+        ssRes += weights[i] * err * err;
       }
 
       let confidence: MotionConfidence = "low";
-      if (newDirection === "Steady") {
-        const variance = sumDD / n;
+      if (currentDisplayed === "Steady") {
+        const variance = sumW > 0 ? sumWDD / sumW : 0;
         if (variance < 2.5) confidence = "high";
         else if (variance < 6.0) confidence = "medium";
         else confidence = "low";
       } else {
-        const r2 = sumDD > 0.001 ? 1 - ssRes / sumDD : 0;
-        if (r2 >= 0.8 && n >= 4) {
+        const r2 = sumWDD > 0.001 ? 1 - ssRes / sumWDD : 0;
+        if (r2 >= 0.75 && n >= 3) {
           confidence = "high";
-        } else if (r2 >= 0.55 || n >= 3) {
+        } else if (r2 >= 0.5) {
           confidence = "medium";
         } else {
           confidence = "low";
@@ -206,14 +204,14 @@ export function useMotionInsights(): MotionInsights {
       }
 
       const activeResult = {
-        direction: newDirection,
-        speedCmS: newDirection === "Steady" ? 0 : smoothedSpeed,
+        direction: currentDisplayed,
+        speedCmS: currentDisplayed === "Steady" ? 0 : speedCmS,
         confidence,
-        slope,
+        slope: weightedSlope,
         sampleCount: n,
       };
 
-      // Cache this reading for up to 4 seconds of holding
+      // Cache reading for up to 4 seconds of holding
       lastValidCalcRef.current = {
         time: serverNow,
         insights: activeResult,
@@ -226,7 +224,7 @@ export function useMotionInsights(): MotionInsights {
       };
     }
 
-    // 4. Samples became insufficient or echo temporarily lost:
+    // 6. Samples became insufficient or echo temporarily lost:
     // Hold previous computed result for up to 4.0 seconds (unless disarmed or offline)
     if (
       lastValidCalcRef.current &&
@@ -242,10 +240,10 @@ export function useMotionInsights(): MotionInsights {
       };
     }
 
-    // 5. Hold period expired: transition to in-card placeholder state
+    // 7. Hold period expired: transition to in-card placeholder state
     lastValidCalcRef.current = null;
-    prevDirectionRef.current = "Unknown";
-    prevSpeedRef.current = 0;
+    displayedDirectionRef.current = "Unknown";
+    pendingCandidateRef.current = null;
 
     return {
       direction: "Unknown",

@@ -302,7 +302,7 @@ export function SmartInsights() {
                 ? "holding last reading"
                 : placeholderReason
                 ? placeholderReason
-                : `${sampleCount} ${sampleCount === 1 ? "sample" : "samples"} (10s)`}
+                : `${sampleCount} ${sampleCount === 1 ? "sample" : "samples"} (5s)`}
             </span>
           </div>
         </GlassCard>
