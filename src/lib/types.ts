@@ -15,6 +15,7 @@ export interface Control {
   maxCm: number;
   buzzerEnabled: boolean;
   armed: boolean;
+  ledOn?: boolean;
 }
 
 /** A single alarm log entry (written by ESP32 under /logs/{pushId}) */

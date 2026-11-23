@@ -25,6 +25,7 @@ import {
   ArrowRight,
   Info,
   AlertTriangle,
+  Lightbulb,
 } from "lucide-react";
 
 /** Quick selectable preset ranges */
@@ -47,6 +48,7 @@ export default function ControlPage() {
   // Optimistic switch states
   const [optimisticArmed, setOptimisticArmed] = useState<boolean>(true);
   const [optimisticBuzzer, setOptimisticBuzzer] = useState<boolean>(true);
+  const [optimisticLed, setOptimisticLed] = useState<boolean>(false);
   const [, startTransition] = useTransition();
 
   // Sync draft state with Firebase saved values when they arrive or change externally
@@ -64,6 +66,7 @@ export default function ControlPage() {
 
     setOptimisticArmed(control.armed);
     setOptimisticBuzzer(control.buzzerEnabled);
+    setOptimisticLed(Boolean(control.ledOn));
   }, [control]);
 
   // Initial synchronization once control is first loaded
@@ -73,6 +76,7 @@ export default function ControlPage() {
       setDraftMax(control.maxCm);
       setOptimisticArmed(control.armed);
       setOptimisticBuzzer(control.buzzerEnabled);
+      setOptimisticLed(Boolean(control.ledOn));
     }
   }, [control === null]);
 
@@ -88,6 +92,7 @@ export default function ControlPage() {
           <Skeleton className="h-72 rounded-xl" />
           <Skeleton className="h-72 rounded-xl" />
         </div>
+        <Skeleton className="h-28 rounded-xl" />
         <Skeleton className="h-44 rounded-xl" />
       </div>
     );
@@ -195,6 +200,25 @@ export default function ControlPage() {
         setOptimisticBuzzer(previous);
       });
       toast.error("Failed to update buzzer sounder.");
+    }
+  };
+
+  // Handle LED Light Switch with Optimistic UI & Rollback
+  const handleLedToggle = async (checked: boolean) => {
+    const previous = optimisticLed;
+    const nextVal = Boolean(checked);
+    startTransition(() => {
+      setOptimisticLed(nextVal);
+    });
+
+    try {
+      await updateControl({ ledOn: nextVal });
+      toast.success("Saved. The device applies changes within about 3 s.");
+    } catch {
+      startTransition(() => {
+        setOptimisticLed(previous);
+      });
+      toast.error("Failed to update LED light state.");
     }
   };
 
@@ -607,6 +631,62 @@ export default function ControlPage() {
             </p>
           </GlassCard>
         </div>
+      </div>
+
+      {/* ── Auxiliary Controls Row (extensible grid for LED & future Motor) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <GlassCard hover className="col-span-full p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <div
+                className={cn(
+                  "h-9 w-9 rounded-xl flex items-center justify-center transition-colors",
+                  optimisticLed
+                    ? "bg-accent/15 text-accent shadow-[0_0_15px_rgba(34,211,238,0.3)] motion-reduce:shadow-none"
+                    : "bg-white/5 text-muted",
+                )}
+              >
+                <Lightbulb className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-text">LED Light</h3>
+                <p className="text-xs text-muted">
+                  {optimisticLed ? (
+                    <span className="text-accent font-semibold">ON</span>
+                  ) : (
+                    <span className="text-muted font-semibold">OFF</span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Large Switch (min 44px touch area) */}
+            <div className="min-h-[44px] flex items-center">
+              <SwitchPrimitive.Root
+                checked={optimisticLed}
+                onCheckedChange={handleLedToggle}
+                className={cn(
+                  "peer inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                  optimisticLed ? "bg-accent" : "bg-white/15",
+                )}
+                aria-label="Toggle LED"
+              >
+                <SwitchPrimitive.Thumb
+                  className={cn(
+                    "pointer-events-none block h-5 w-5 rounded-full bg-text shadow-lg ring-0 transition-transform",
+                    optimisticLed
+                      ? "translate-x-5 bg-bg"
+                      : "translate-x-0 bg-muted",
+                  )}
+                />
+              </SwitchPrimitive.Root>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted pt-2 border-t border-border/40">
+            Turn the LED on or off from anywhere. It is independent of the distance sensor, buzzer and alarm.
+          </p>
+        </GlassCard>
       </div>
 
       {/* ── Summary Card: Current Saved Settings in Cloud ──────────── */}

@@ -50,6 +50,7 @@ Do not rename, remove or restructure these fields. The firmware depends on them.
 | `maxCm`         | number  | Upper bound of the alert range (> minCm, <= 400)         |
 | `buzzerEnabled` | boolean | If false, the alarm is shown but the buzzer stays silent |
 | `armed`         | boolean | If false, the system never alarms                        |
+| `ledOn`         | boolean | (Optional) Remote LED light toggle; defaults to false    |
 
 Defaults created by the firmware: `minCm 10`, `maxCm 50`, `buzzerEnabled true`, `armed true`.
 
@@ -111,7 +112,7 @@ Proximo must look like a **premium commercial product**, not a student template.
 
 ## 6. Scope
 
-**In scope:** live dashboard, radar gauge, live chart, control panel, alarm history and analytics, smart insights, About page, Vercel deployment.
+**In scope:** live dashboard, radar gauge, live chart, control panel, alarm history and analytics, smart insights, About page, Vercel deployment, LED control.
 
 **Out of scope (do not build unless a step explicitly asks):** login/authentication, demo or simulation mode, language toggle, QR code, light theme, PWA, people counter, heatmap, scheduling, remote restart, Cloud Functions, any paid service. Telegram alerts are done in the ESP32 firmware, not in this repo.
 
@@ -131,6 +132,7 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 - [x] Step 8 — About page and polish
 - [x] Step 8b — Developer page
 - [x] Step 9 — Deploy to Vercel (Live at https://proximo-zeta.vercel.app/)
+- [x] Step 10 — LED control
 
 ### Step 1 — Foundation
 
@@ -185,6 +187,10 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 ### Step 9 — Deploy to Vercel
 
 **Build:** GitHub repo, Vercel import, environment variables, production check on a phone while the ESP32 runs on a hotspot, and the live URL added to this README. Database security rules are handled by the user outside the agent. Do not change them.
+
+### Step 10 — LED control
+
+**Build:** an independent remote LED light switch card on `/control` with optimistic UI, updating `control.ledOn` in Firebase Realtime Database with a 3s sync notice.
 
 ## 8. Working agreement for AI agents
 
