@@ -315,8 +315,8 @@ export function RadarGauge({ live, control, className = "" }: RadarGaugeProps) {
                 attributeName="transform"
                 type="rotate"
                 from={`-180 ${cx} ${cy}`}
-                to={`0 ${cx} ${cy}`}
-                dur="3.6s"
+                to={`35 ${cx} ${cy}`}
+                dur="4s"
                 repeatCount="indefinite"
               />
             )}
