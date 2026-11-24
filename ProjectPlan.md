@@ -44,13 +44,17 @@ Do not rename, remove or restructure these fields. The firmware depends on them.
 
 ### `/control` (written by the website, read by ESP32)
 
-| Field           | Type    | Meaning                                                  |
-| --------------- | ------- | -------------------------------------------------------- |
-| `minCm`         | number  | Lower bound of the alert range (>= 0)                    |
-| `maxCm`         | number  | Upper bound of the alert range (> minCm, <= 400)         |
-| `buzzerEnabled` | boolean | If false, the alarm is shown but the buzzer stays silent |
-| `armed`         | boolean | If false, the system never alarms                        |
-| `ledOn`         | boolean | (Optional) Remote LED light toggle; defaults to false    |
+| Field           | Type    | Meaning                                                         |
+| --------------- | ------- | --------------------------------------------------------------- |
+| `minCm`         | number  | Lower bound of the alert range (>= 0)                           |
+| `maxCm`         | number  | Upper bound of the alert range (> minCm, <= 400)                |
+| `buzzerEnabled` | boolean | If false, the alarm is shown but the buzzer stays silent        |
+| `armed`         | boolean | If false, the system never alarms                               |
+| `ledOn`         | boolean | (Optional) Remote LED light toggle; defaults to false           |
+| `servoEnabled`  | boolean | (Optional) Remote servo motor trigger enable; defaults to false |
+| `servoMinCm`    | number  | (Optional) Lower bound of servo trigger range (>= 2)            |
+| `servoMaxCm`    | number  | (Optional) Upper bound of servo trigger range (> min, <= 400)   |
+| `servoAngle`    | number  | (Optional) Turn angle in degrees (10 to 180); defaults to 90    |
 
 Defaults created by the firmware: `minCm 10`, `maxCm 50`, `buzzerEnabled true`, `armed true`.
 
@@ -112,7 +116,7 @@ Proximo must look like a **premium commercial product**, not a student template.
 
 ## 6. Scope
 
-**In scope:** live dashboard, radar gauge, live chart, control panel, alarm history and analytics, smart insights, About page, Vercel deployment, LED control.
+**In scope:** live dashboard, radar gauge, live chart, control panel, alarm history and analytics, smart insights, About page, Vercel deployment, LED control, servo control.
 
 **Out of scope (do not build unless a step explicitly asks):** login/authentication, demo or simulation mode, language toggle, QR code, light theme, PWA, people counter, heatmap, scheduling, remote restart, Cloud Functions, any paid service. Telegram alerts are done in the ESP32 firmware, not in this repo.
 
@@ -133,6 +137,7 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 - [x] Step 8b — Developer page
 - [x] Step 9 — Deploy to Vercel (Live at https://proximo-zeta.vercel.app/)
 - [x] Step 10 — LED control
+- [x] Step 11 — Servo control
 
 ### Step 1 — Foundation
 
@@ -191,6 +196,10 @@ Work **one step at a time**. After each step the user tests it, then asks for th
 ### Step 10 — LED control
 
 **Build:** an independent remote LED light switch card on `/control` with optimistic UI, updating `control.ledOn` in Firebase Realtime Database with a 3s sync notice.
+
+### Step 11 — Servo control
+
+**Build:** an independent remote servo motor control card on `/control` with immediate toggle, dual-handle trigger range slider, angle slider with presets and dial preview, draft state, and cloud sync.
 
 ## 8. Working agreement for AI agents
 

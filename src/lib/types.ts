@@ -16,6 +16,10 @@ export interface Control {
   buzzerEnabled: boolean;
   armed: boolean;
   ledOn?: boolean;
+  servoEnabled?: boolean;
+  servoMinCm?: number;
+  servoMaxCm?: number;
+  servoAngle?: number;
 }
 
 /** A single alarm log entry (written by ESP32 under /logs/{pushId}) */
