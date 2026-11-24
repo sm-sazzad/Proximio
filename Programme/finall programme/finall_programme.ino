@@ -19,6 +19,7 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <LiquidCrystal.h>
+#include <ESP32Servo.h>
 #include <time.h>
 
 // ---------------- Settings ----------------
@@ -26,8 +27,8 @@ const char* DB_URL  = "https://distance-monitor-1c7b9-default-rtdb.asia-southeas
 const char* AP_NAME = "DistMon-Setup";
 
 // Telegram: paste your own values here
-const char* TG_BOT_TOKEN = "Telegram_api_key";   // from @BotFather
-const char* TG_CHAT_ID   = "telegram id";     // your chat or group id
+const char* TG_BOT_TOKEN = "YOUR_TELEGRAM_API_KEY";   // from @BotFather
+const char* TG_CHAT_ID   = "YOUR_TELEGRAM_ID";     // your chat or group id
 const char* DASHBOARD_URL = "https://proximo-zeta.vercel.app";   // your Vercel link (must start with https://), or leave empty
 const unsigned long TG_COOLDOWN_MS = 15000;          // min gap between alert messages
 const bool TG_SEND_CLEARED   = true;                 // send an "all clear" message when the object leaves
@@ -44,6 +45,12 @@ LiquidCrystal lcd(22, 23, 21, 19, 18, 17);        // RS, E, D4, D5, D6, D7
 const int TRIG_PIN      = 25;
 const int ECHO_PIN      = 26;
 const int BUZZER_PIN    = 27;
+const int LED_PIN = 32;
+const int SERVO_PIN = 33;
+const int SERVO_REST_DEG = 0;                     // resting position
+const int SERVO_STEP_DEG = 6;                     // degrees per 100 ms (smooth, low current)
+const unsigned long SERVO_RELEASE_MS = 1000;      // stay turned for 1 s after leaving the range
+Servo g_servo;
 const int RESET_BTN_PIN = 0;                      // BOOT button
 
 // ---------------- Shared state (sensor loop <-> cloud task) ----------------
@@ -54,6 +61,11 @@ volatile int           g_maxCm         = 50;
 volatile bool          g_buzzerEnabled = true;
 volatile bool          g_armed         = true;
 volatile bool          g_tgEnabled     = true;    // Telegram on/off (from /control)
+volatile bool          g_ledOn         = false;   // LED on/off (from /control)
+volatile bool          g_servoEnabled  = false;
+volatile int           g_servoMin      = 5;
+volatile int           g_servoMax      = 10;
+volatile int           g_servoAngle    = 90;
 volatile bool          g_forcePush     = false;   // push live data right now
 volatile unsigned long g_eventCount    = 0;       // total alarm events since boot
 volatile float         g_lastEventMin  = 0;       // closest distance of latest event
@@ -212,6 +224,17 @@ void pullControl() {
   g_buzzerEnabled = doc["buzzerEnabled"] | true;
   g_armed         = doc["armed"] | true;
   g_tgEnabled     = doc["telegramEnabled"] | true;   // missing field = enabled
+  g_ledOn = doc["ledOn"] | false;                 // missing field = off
+    g_servoEnabled = doc["servoEnabled"] | false;   // missing field = off
+  int smn = doc["servoMinCm"] | 5;
+  int smx = doc["servoMaxCm"] | 10;
+  if (smn >= 2 && smx > smn && smx <= 400) {
+    g_servoMin = smn;
+    g_servoMax = smx;
+  }
+  int sa = doc["servoAngle"] | 90;
+  if (sa >= 10 && sa <= 180) g_servoAngle = sa;
+  digitalWrite(LED_PIN, g_ledOn ? HIGH : LOW);
 }
 
 void pushLogs() {
@@ -438,6 +461,11 @@ void setup() {
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+  g_servo.setPeriodHertz(50);
+  g_servo.attach(SERVO_PIN, 500, 2400);
+  g_servo.write(SERVO_REST_DEG);
+  digitalWrite(LED_PIN, LOW);
   digitalWrite(BUZZER_PIN, LOW);
   pinMode(RESET_BTN_PIN, INPUT_PULLUP);
 
@@ -524,6 +552,20 @@ void loop() {
 
   digitalWrite(BUZZER_PIN, (alarm && g_buzzerEnabled) ? HIGH : LOW);
   updateLcd(d);
+
+    // ---- Servo: its own range, independent of the alarm range ----
+  static unsigned long servoLastIn = 0;
+  static int servoPos = SERVO_REST_DEG;
+  bool servoIn = g_servoEnabled && (d >= 0) && (d >= g_servoMin) && (d <= g_servoMax);
+  if (servoIn) servoLastIn = now;
+  bool servoActive = g_servoEnabled &&
+                     (servoIn || (servoLastIn != 0 && now - servoLastIn < SERVO_RELEASE_MS));
+  int servoTarget = servoActive ? (int)g_servoAngle : SERVO_REST_DEG;
+  if (servoPos != servoTarget) {
+    if (servoPos < servoTarget) servoPos = min(servoPos + SERVO_STEP_DEG, servoTarget);
+    else                        servoPos = max(servoPos - SERVO_STEP_DEG, servoTarget);
+    g_servo.write(servoPos);
+  }
 
   Serial.print("Distance: ");
   Serial.print(d, 1);
