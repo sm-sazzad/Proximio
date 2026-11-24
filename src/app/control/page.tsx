@@ -792,9 +792,21 @@ export default function ControlPage() {
       {/* ── Auxiliary Controls Row: LED Light (narrower) & Servo Motor (wider) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* ── LED Light Card (lg:col-span-4) ── */}
-        <GlassCard hover className="lg:col-span-4 p-5 sm:p-6 flex flex-col justify-between space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
+        <GlassCard
+          hover
+          className="lg:col-span-4 p-5 sm:p-6 flex flex-col justify-between space-y-5 relative overflow-hidden"
+        >
+          {/* Ambient background glow when LED is ON */}
+          {optimisticLed && (
+            <div
+              className="absolute -top-12 left-1/2 -translate-x-1/2 w-64 h-64 bg-accent/15 rounded-full blur-3xl pointer-events-none motion-reduce:hidden"
+              aria-hidden="true"
+            />
+          )}
+
+          {/* Top Header */}
+          <div>
+            <div className="flex items-center justify-between gap-4 mb-2">
               <div className="flex items-center gap-2.5">
                 <div
                   className={cn(
@@ -840,11 +852,87 @@ export default function ControlPage() {
                 </SwitchPrimitive.Root>
               </div>
             </div>
+
+            <p className="text-xs text-muted">
+              Turn the LED on or off from anywhere. It is independent of the distance sensor, buzzer and alarm.
+            </p>
           </div>
 
-          <p className="text-xs text-muted pt-2 border-t border-border/40">
-            Turn the LED on or off from anywhere. It is independent of the distance sensor, buzzer and alarm.
-          </p>
+          {/* Center Stage: Interactive Lamp Beacon Visualizer */}
+          <div className="flex flex-col items-center justify-center py-4 relative z-10">
+            {/* Clickable Illuminating Orb */}
+            <button
+              type="button"
+              onClick={() => handleLedToggle(!optimisticLed)}
+              className={cn(
+                "relative group flex items-center justify-center rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer",
+                optimisticLed
+                  ? "p-6 bg-accent/10 border-2 border-accent shadow-[0_0_40px_rgba(34,211,238,0.4)]"
+                  : "p-6 bg-white/[0.02] border-2 border-border/60 hover:border-accent/40 hover:bg-white/[0.04]",
+              )}
+              aria-label={optimisticLed ? "Turn LED light OFF" : "Turn LED light ON"}
+            >
+              {/* Radial pulse waves when ON */}
+              {optimisticLed && (
+                <div
+                  className="absolute inset-0 rounded-full border border-accent/40 animate-ping pointer-events-none motion-reduce:hidden"
+                  aria-hidden="true"
+                />
+              )}
+
+              {/* Main Glowing Lightbulb Icon */}
+              <Lightbulb
+                className={cn(
+                  "h-12 w-12 transition-all duration-300",
+                  optimisticLed
+                    ? "text-accent fill-accent filter drop-shadow-[0_0_16px_rgba(34,211,238,0.8)] scale-110"
+                    : "text-muted/40 fill-transparent scale-100 group-hover:text-muted/70",
+                )}
+              />
+            </button>
+
+            {/* Quick status pill below orb */}
+            <div className="mt-3 text-center space-y-1">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold border transition-colors",
+                  optimisticLed
+                    ? "bg-accent/15 text-accent border-accent/40 shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                    : "bg-white/[0.03] text-muted border-border/50",
+                )}
+              >
+                <span
+                  className={cn(
+                    "h-2 w-2 rounded-full",
+                    optimisticLed ? "bg-accent animate-pulse" : "bg-muted/40",
+                  )}
+                />
+                {optimisticLed ? "ILLUMINATING" : "STANDBY"}
+              </span>
+              <p className="text-[11px] text-muted/70 font-mono">
+                Click lamp to toggle
+              </p>
+            </div>
+          </div>
+
+          {/* Micro Telemetry Specs (fills vertical space symmetrically) */}
+          <div className="pt-3 border-t border-border/40 grid grid-cols-2 gap-2 text-center text-xs font-mono">
+            <div className="p-2 rounded-lg bg-white/[0.02] border border-border/30">
+              <span className="text-[10px] text-muted block uppercase">Logic Level</span>
+              <span
+                className={cn(
+                  "font-bold text-[11px]",
+                  optimisticLed ? "text-accent" : "text-muted",
+                )}
+              >
+                {optimisticLed ? "HIGH (3.3V)" : "LOW (0.0V)"}
+              </span>
+            </div>
+            <div className="p-2 rounded-lg bg-white/[0.02] border border-border/30">
+              <span className="text-[10px] text-muted block uppercase">Channel</span>
+              <span className="text-text font-bold text-[11px]">GPIO Output</span>
+            </div>
+          </div>
         </GlassCard>
 
         {/* ── Servo Motor Card (lg:col-span-8) ── */}
