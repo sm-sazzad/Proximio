@@ -910,7 +910,7 @@ export default function ControlPage() {
                 {optimisticLed ? "ILLUMINATING" : "STANDBY"}
               </span>
               <p className="text-[11px] text-muted/70 font-mono">
-                Click lamp to toggle
+                {optimisticLed ? "Click to turn light off" : "Click to turn light on"}
               </p>
             </div>
           </div>
