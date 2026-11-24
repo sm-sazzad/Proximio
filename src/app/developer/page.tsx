@@ -129,20 +129,21 @@ export default function DeveloperPage() {
                 </a>
               )}
 
-              {/* Secondary: CV */}
-              {dev.cvUrl && (
+              {/* Secondary: Resume */}
+              {(dev.cvUrl || true) && (
                 <a
-                  href={dev.cvUrl}
+                  href={dev.cvUrl || "/resume.pdf"}
+                  download="Resume-Sheikh-Md-Sazzad-Hossain.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-lg border border-border/80 bg-white/[0.03] px-3.5 py-2 text-xs font-semibold text-text hover:bg-white/[0.08] hover:border-accent/40 transition-colors min-h-[44px]",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
                   )}
-                  aria-label="Download Curriculum Vitae (PDF)"
+                  aria-label="Download Resume (PDF)"
                 >
                   <Download className="h-3.5 w-3.5 text-accent" />
-                  <span>Download CV</span>
+                  <span>Download Resume</span>
                 </a>
               )}
 
@@ -339,8 +340,8 @@ export default function DeveloperPage() {
                   ))}
                 </div>
 
-                {/* Links: Live and GitHub */}
-                <div className="flex items-center gap-2 pt-1">
+                {/* Links: Live and GitHub (Client & Server) */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
                   {proj.liveUrl && (
                     <a
                       href={proj.liveUrl}
@@ -359,11 +360,32 @@ export default function DeveloperPage() {
                       href={proj.githubUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-text hover:bg-white/[0.08] hover:border-accent/40 transition-colors min-h-[38px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                      aria-label={`View source code of ${proj.title} on GitHub`}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-white/[0.03] px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-white/[0.08] hover:border-accent/40 transition-colors min-h-[38px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      title={proj.serverGithubUrl ? "Client Repository" : "GitHub Repository"}
+                      aria-label={`View ${proj.serverGithubUrl ? "client " : ""}source code of ${proj.title} on GitHub`}
                     >
                       <GithubIcon className="h-3.5 w-3.5" />
-                      <span className="sr-only">GitHub</span>
+                      {proj.serverGithubUrl && (
+                        <span className="text-[10px] font-mono text-muted hover:text-text">
+                          Client
+                        </span>
+                      )}
+                    </a>
+                  )}
+
+                  {proj.serverGithubUrl && (
+                    <a
+                      href={proj.serverGithubUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-white/[0.03] px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-white/[0.08] hover:border-accent/40 transition-colors min-h-[38px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      title="Server Repository"
+                      aria-label={`View server source code of ${proj.title} on GitHub`}
+                    >
+                      <GithubIcon className="h-3.5 w-3.5" />
+                      <span className="text-[10px] font-mono text-muted hover:text-text">
+                        Server
+                      </span>
                     </a>
                   )}
                 </div>

@@ -233,6 +233,12 @@ export default function AboutPage() {
                 <Users className="h-3.5 w-3.5 text-accent" />
                 {projectConfig.institution}
               </span>
+              {projectConfig.instructor && (
+                <span className="flex items-center gap-1.5 rounded-md bg-accent/10 border border-accent/30 px-2.5 py-1 text-accent font-semibold">
+                  <GraduationCap className="h-3.5 w-3.5 text-accent" />
+                  Instructor: {projectConfig.instructor}
+                </span>
+              )}
             </div>
           </div>
 
@@ -322,35 +328,61 @@ export default function AboutPage() {
       {/* ── 4 & 5. Hardware List & Pin Mapping Table ─────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Hardware List (5 cols) */}
-        <GlassCard hover className="lg:col-span-5 p-6 space-y-4 flex flex-col justify-between">
+        <GlassCard hover className="lg:col-span-5 p-6 flex flex-col">
           <div>
             <SectionHeader
               title="Hardware Bill of Materials"
               icon={<Cpu className="h-4 w-4" />}
               className="mb-1"
             />
-            <p className="text-xs text-muted">
+            <p className="text-xs text-muted mb-4">
               Physical components integrated into the edge sensor node.
             </p>
           </div>
 
-          <ul className="space-y-2.5 pt-2 text-xs">
+          <ul className="flex-1 flex flex-col justify-between gap-2.5 text-xs">
             {[
-              { name: "ESP32-WROOM DevKit", desc: "Dual-core 240MHz MCU with 2.4GHz WiFi" },
-              { name: "HC-SR04 Ultrasonic Sensor", desc: "Range: 2 cm to 400 cm (non-contact)" },
-              { name: "Active Buzzer", desc: "High-decibel audible alarm sounder" },
-              { name: "16x2 Character LCD", desc: "Local display in 4-bit parallel mode" },
-              { name: "10kΩ Potentiometer", desc: "Analog contrast adjustment for LCD" },
-              { name: "Breadboard & Jumper Wires", desc: "Prototyping interconnect harness" },
+              {
+                name: "ESP32-WROOM DevKit",
+                desc: "Dual-core 240MHz MCU with 2.4GHz WiFi & BLE",
+              },
+              {
+                name: "HC-SR04 Ultrasonic Sensor",
+                desc: "Range: 2 cm to 400 cm (non-contact sonar)",
+              },
+              {
+                name: "SG90 Micro Servo Motor",
+                desc: "180° positional actuator for physical gate/dial",
+              },
+              {
+                name: "5mm Indicator LED Light",
+                desc: "Remote-switched optical indicator lamp (D32)",
+              },
+              {
+                name: "Active Buzzer",
+                desc: "High-decibel audible alarm sounder (GPIO27)",
+              },
+              {
+                name: "16x2 Character LCD",
+                desc: "Local telemetry display in 4-bit parallel mode",
+              },
+              {
+                name: "10kΩ Potentiometer",
+                desc: "Analog contrast adjustment for LCD (V0 pin)",
+              },
+              {
+                name: "Breadboard & Jumper Wires",
+                desc: "Prototyping interconnect harness & DuPont lines",
+              },
             ].map((hw) => (
               <li
                 key={hw.name}
-                className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white/[0.02] border border-border/40"
+                className="flex-1 flex items-center gap-3 px-3.5 py-3 rounded-lg bg-white/[0.02] border border-border/40 hover:border-accent/30 transition-colors"
               >
-                <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold text-text block">{hw.name}</span>
-                  <span className="text-[11px] text-muted">{hw.desc}</span>
+                <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                <div className="min-w-0">
+                  <span className="font-semibold text-text block leading-snug">{hw.name}</span>
+                  <span className="text-[11px] text-muted block leading-snug">{hw.desc}</span>
                 </div>
               </li>
             ))}
@@ -417,6 +449,40 @@ export default function AboutPage() {
                 <tr>
                   <td className="py-2 font-sans font-medium text-warning">Buzzer</td>
                   <td className="py-2">-</td>
+                  <td className="py-2 text-warning font-bold">GND</td>
+                  <td className="py-2 text-muted">Common Ground</td>
+                </tr>
+
+                {/* LED Light */}
+                <tr>
+                  <td className="py-2 font-sans font-medium text-accent">LED Light</td>
+                  <td className="py-2">Anode (Long pin / +)</td>
+                  <td className="py-2 text-accent font-bold">GPIO32 (D32)</td>
+                  <td className="py-2 text-muted">Optical Indicator Control</td>
+                </tr>
+                <tr>
+                  <td className="py-2 font-sans font-medium text-accent">LED Light</td>
+                  <td className="py-2">Cathode (Short pin / -)</td>
+                  <td className="py-2 text-accent font-bold">GND</td>
+                  <td className="py-2 text-muted">Common Ground</td>
+                </tr>
+
+                {/* SG90 Micro Servo Motor */}
+                <tr>
+                  <td className="py-2 font-sans font-medium text-warning">SG90 Servo</td>
+                  <td className="py-2">Signal (Yellow)</td>
+                  <td className="py-2 text-warning font-bold">GPIO33 (D33)</td>
+                  <td className="py-2 text-muted">PWM Servo Signal Output</td>
+                </tr>
+                <tr>
+                  <td className="py-2 font-sans font-medium text-warning">SG90 Servo</td>
+                  <td className="py-2">VCC (Red)</td>
+                  <td className="py-2 text-warning font-bold">5V (VIN)</td>
+                  <td className="py-2 text-muted">Servo Motor Power Supply</td>
+                </tr>
+                <tr>
+                  <td className="py-2 font-sans font-medium text-warning">SG90 Servo</td>
+                  <td className="py-2">GND (Brown / বাদামী)</td>
                   <td className="py-2 text-warning font-bold">GND</td>
                   <td className="py-2 text-muted">Common Ground</td>
                 </tr>
@@ -511,13 +577,96 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* ── 7. Tech Stack Chips ──────────────────────────────────────────── */}
+      {/* ── 7. Firmware Environment & Arduino Libraries ────────────────── */}
+      <GlassCard hover className="p-6 sm:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/40 pb-4">
+          <div>
+            <SectionHeader
+              title="Firmware Environment & Arduino Libraries"
+              icon={<Cpu className="h-4 w-4" />}
+              className="mb-1"
+            />
+            <p className="text-xs text-muted">
+              Official board core and Arduino Library Manager packages required to flash the ESP32 firmware.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 self-start sm:self-auto text-xs font-mono text-accent bg-accent/10 border border-accent/30 px-3 py-1.5 rounded-lg">
+            <span>Board: ESP32 Dev Module</span>
+          </div>
+        </div>
+
+        {/* Board Package Setup Note */}
+        <div className="p-4 rounded-xl bg-white/[0.02] border border-border/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="space-y-1">
+            <span className="font-semibold text-text block">
+              Boards Manager Package: <code className="text-accent font-mono">esp32</code> by Espressif Systems
+            </span>
+            <p className="text-[11px] text-muted">
+              In Arduino IDE Boards Manager, search for <strong>esp32</strong> and install the official package. Select <strong>ESP32 Dev Module</strong> from Tools &gt; Board.
+            </p>
+          </div>
+          <span className="shrink-0 font-mono text-[11px] text-success bg-success/10 border border-success/30 px-2.5 py-1 rounded">
+            Espressif Core
+          </span>
+        </div>
+
+        {/* Arduino Libraries Table */}
+        <div className="space-y-2">
+          <h4 className="text-xs font-semibold text-text font-mono uppercase tracking-wider">
+            Required Libraries (Library Manager)
+          </h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-mono border-collapse">
+              <thead>
+                <tr className="border-b border-border text-muted">
+                  <th className="pb-2 font-semibold">Library</th>
+                  <th className="pb-2 font-semibold">Author</th>
+                  <th className="pb-2 font-semibold text-accent">Purpose / Function</th>
+                  <th className="pb-2 font-semibold">Source</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40 text-text/90">
+                <tr>
+                  <td className="py-2.5 font-bold text-accent">LiquidCrystal</td>
+                  <td className="py-2.5 text-muted">Arduino, Adafruit</td>
+                  <td className="py-2.5 text-text">16x2 Character LCD Driver (4-bit parallel mode)</td>
+                  <td className="py-2.5 text-muted">Library Manager</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 font-bold text-accent">WiFiManager</td>
+                  <td className="py-2.5 text-muted">tzapu</td>
+                  <td className="py-2.5 text-text">Mobile Captive Portal for WiFi Configuration without hardcoded credentials</td>
+                  <td className="py-2.5 text-muted">Library Manager</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 font-bold text-accent">ArduinoJson</td>
+                  <td className="py-2.5 text-muted">Benoit Blanchon (v7.x)</td>
+                  <td className="py-2.5 text-text">Fast JSON Serialization &amp; Firebase RTDB Payload Parser</td>
+                  <td className="py-2.5 text-muted">Library Manager</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 font-bold text-accent">ESP32Servo</td>
+                  <td className="py-2.5 text-muted">Kevin Harrington, John K. Bennett</td>
+                  <td className="py-2.5 text-text">SG90 180° Micro Servo Motor PWM Actuator Control</td>
+                  <td className="py-2.5 text-muted">Library Manager</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </GlassCard>
+
+      {/* ── 8. Tech Stack Chips ──────────────────────────────────────────── */}
       <GlassCard className="p-6 space-y-4">
         <SectionHeader title="Technology Stack" icon={<Layers className="h-4 w-4" />} />
         <div className="flex flex-wrap gap-2 pt-1">
           {[
             "ESP32",
             "Arduino C++",
+            "LiquidCrystal",
+            "WiFiManager",
+            "ArduinoJson (v7.x)",
+            "ESP32Servo",
             "Firebase Realtime Database",
             "Next.js",
             "TypeScript",
@@ -536,7 +685,7 @@ export default function AboutPage() {
         </div>
       </GlassCard>
 
-      {/* ── 8. Team & Project Credits Section (Editable via src/config/project.ts) ── */}
+      {/* ── 9. Team & Project Credits Section (Editable via src/config/project.ts) ── */}
       <GlassCard className="p-6 sm:p-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-4">
           <div>
@@ -564,30 +713,41 @@ export default function AboutPage() {
             <div
               key={idx}
               className={cn(
-                "p-4 rounded-xl border bg-white/[0.02] space-y-2 transition-colors relative overflow-hidden",
+                "p-4 rounded-xl border bg-white/[0.02] space-y-2 transition-all relative overflow-hidden",
                 member.isLead
-                  ? "border-accent/50 bg-accent/[0.04] shadow-[0_0_20px_-8px_rgba(6,182,212,0.25)]"
+                  ? "border-accent/50 shadow-[0_0_15px_-5px_rgba(34,211,238,0.2)]"
                   : "border-border/60 hover:border-accent/30"
               )}
             >
               <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "h-10 w-10 rounded-full border flex items-center justify-center font-bold font-mono text-sm shrink-0",
-                    member.isLead
-                      ? "bg-accent/20 border-accent/60 text-accent ring-2 ring-accent/20"
-                      : "bg-accent/10 border-accent/30 text-accent"
+                {/* Avatar with beacon ping wave animation for Admin */}
+                <div className="relative shrink-0">
+                  {member.isLead && (
+                    <div
+                      className="absolute inset-0 rounded-full border border-accent/60 animate-ping pointer-events-none motion-reduce:hidden"
+                      aria-hidden="true"
+                    />
                   )}
-                >
-                  {member.name.charAt(0)}
+                  <div
+                    className={cn(
+                      "relative h-10 w-10 rounded-full border flex items-center justify-center font-bold font-mono text-sm",
+                      member.isLead
+                        ? "bg-accent/20 border-accent/60 text-accent shadow-[0_0_12px_rgba(34,211,238,0.4)]"
+                        : "bg-accent/10 border-accent/30 text-accent"
+                    )}
+                  >
+                    {member.name.charAt(0)}
+                  </div>
                 </div>
+
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h4 className="font-bold text-sm text-text truncate">
                       {member.name}
                     </h4>
                     {member.isLead && (
-                      <span className="shrink-0 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/40">
+                      <span className="inline-flex items-center gap-1.5 shrink-0 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-accent/20 text-accent border border-accent/40">
+                        <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
                         Admin
                       </span>
                     )}
@@ -605,7 +765,15 @@ export default function AboutPage() {
             <span className="text-text font-medium block">
               {projectConfig.courseName}
             </span>
-            <span>{projectConfig.institution}</span>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-muted">
+              <span>{projectConfig.institution}</span>
+              {projectConfig.instructor && (
+                <>
+                  <span>•</span>
+                  <span className="text-accent font-semibold">Instructor: {projectConfig.instructor}</span>
+                </>
+              )}
+            </div>
           </div>
           <Link
             href="/developer"

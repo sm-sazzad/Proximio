@@ -83,6 +83,11 @@ Built for the **Microcontroller-Based Systems Design And Development** course at
 | **16x2 LCD** | RW | `GND` | Read/Write tied to ground (Write mode) |
 | **16x2 LCD** | VDD | `5V (VIN)` | Logic power supply |
 | **Potentiometer** | Wiper -> V0 | Contrast adjust | LCD contrast potentiometer |
+| **LED Light** | Anode (Long pin / +) | `GPIO 32` | Remote optical indicator output |
+| **LED Light** | Cathode (Short pin / -) | `GND` | Common ground |
+| **SG90 Servo** | Signal (Yellow) | `GPIO 33` | PWM Servo signal (`ESP32Servo` library) |
+| **SG90 Servo** | VCC (Red) | `5V (VIN)` | Motor power supply |
+| **SG90 Servo** | GND (Brown / বাদামী) | `GND` | Common ground |
 
 ---
 

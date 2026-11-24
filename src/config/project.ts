@@ -17,6 +17,7 @@ export interface ProjectItem {
   tech: string[];
   liveUrl: string;
   githubUrl: string;
+  serverGithubUrl?: string;
 }
 
 export interface SkillGroup {
@@ -47,6 +48,7 @@ export interface ProjectConfig {
   description: string;
   courseName: string;
   institution: string;
+  instructor?: string;
   semester?: string;
   year?: string;
   repositoryUrl?: string;
@@ -62,6 +64,7 @@ export const projectConfig: ProjectConfig = {
     "An ESP32 and an ultrasonic sensor measure distance, and this dashboard shows and controls it live from any device.",
   courseName: "Microcontroller-Based Systems Design And Development",
   institution: "Kushtia Polytechnic Institute",
+  instructor: "Tanvir Ahammed",
   semester: "Diploma in Engineering (CST)",
   year: "2026",
   repositoryUrl: "https://github.com/sm-sazzad",
@@ -69,7 +72,7 @@ export const projectConfig: ProjectConfig = {
   team: [
     {
       name: "Sheikh Md Sazzad Hossain",
-      role: "Team Lead & Full-Stack / IoT Developer",
+      role: "Team Leader & Full-Stack / IoT Developer",
       isLead: true,
     },
     {
@@ -114,7 +117,7 @@ export const projectConfig: ProjectConfig = {
     bio: "I'm a Computer Science and Technology student and web developer from Kushtia, Bangladesh. I build clean, responsive, user-friendly web experiences with modern web technologies. I created Proximo for my Microcontroller-Based Systems course, connecting an ESP32 distance-sensing system to a live, real-time Next.js dashboard.",
     avatar: "/developer.png",
     portfolioUrl: "https://sazzad-dev.vercel.app/",
-    cvUrl: "https://sazzad-dev.vercel.app/files/cv.pdf",
+    cvUrl: "/resume.pdf",
     github: "https://github.com/sm-sazzad",
     linkedin: "https://linkedin.com/in/sm-sazzad/",
     email: "sazzadhossain5758@gmail.com",
@@ -142,20 +145,42 @@ export const projectConfig: ProjectConfig = {
     ],
     projects: [
       {
-        title: "BazarDor",
+        title: "PizzaHub",
         description:
-          "A Bengali-language web app for exploring essential commodity prices, browsing product categories and comparing daily market price changes in Bangladesh.",
-        tech: ["Next.js", "TypeScript", "Tailwind CSS", "Better Auth"],
-        liveUrl: "https://bazar-dor-sm-sazzad.vercel.app/",
-        githubUrl: "https://github.com/sm-sazzad/BazarDor",
+          "Multi-vendor food ordering platform connecting customers with artisanal pizzerias, supporting order tracking, kitchen management, and platform governance. Features role-based access control (Customer, Vendor, Admin), duplicate-order prevention, real-time status updates, Stripe Checkout subscription upgrades, and an administrative dashboard.",
+        tech: [
+          "Next.js",
+          "React.js",
+          "TypeScript",
+          "Tailwind CSS",
+          "Node.js",
+          "Express.js",
+          "MongoDB",
+          "Better Auth",
+          "Stripe",
+        ],
+        liveUrl: "https://pizzahub-delta.vercel.app",
+        githubUrl:
+          "https://github.com/sm-sazzad/PizzaHub-Pizza-Ordering-Delivery-Platform",
+        serverGithubUrl: "https://github.com/sm-sazzad/pizzahub-server.git",
       },
       {
-        title: "Vistora",
+        title: "Kindred",
         description:
-          "A modern editorial blog platform that fetches articles from The Guardian Open Platform API, with category browsing, pagination and article detail pages.",
-        tech: ["Next.js", "TypeScript", "Tailwind CSS"],
-        liveUrl: "https://vistora-sm-sazzad.vercel.app/",
-        githubUrl: "https://github.com/sm-sazzad/Vistora-mini-blog",
+          "Community volunteering platform connecting volunteers with events across blood donation, environmental protection, food distribution, education, and healthcare. Features email/password and Google authentication with Better Auth, event management with category filtering, and join/leave flows with a personal dashboard.",
+        tech: [
+          "Next.js",
+          "React.js",
+          "TypeScript",
+          "Tailwind CSS",
+          "Node.js",
+          "Express.js",
+          "MongoDB",
+          "Better Auth",
+        ],
+        liveUrl: "https://kindred-client.vercel.app",
+        githubUrl: "https://github.com/sm-sazzad/KindRed.git",
+        serverGithubUrl: "https://github.com/sm-sazzad/KindRed-Server.git",
       },
       {
         title: "CineList",
